@@ -20,9 +20,9 @@
     {
       "identity" : "iosmath",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/junyan72/iosMath",
+      "location" : "https://github.com/basecompute/iosMath",
       "state" : {
-        "revision" : "ba9ab7729b151329c54fd895a7c1859981d9484c"
+        "revision" : "c7d5512fbed10ac12e5884cc6b1394abd57ee048"
       }
     },
     {

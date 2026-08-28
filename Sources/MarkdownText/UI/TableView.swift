@@ -21,6 +21,7 @@ struct TableView: View {
   @Environment(\.markdownController) var controller: MarkdownController?
 
   let headings: [AttributedString]
+  let headingContents: [RowContent]
   let rows: [[RowContent]]
   let alignments: [MarkdownColumnAlignment]
   let columnMaxWidths: [Int: CGFloat]
@@ -36,6 +37,13 @@ struct TableView: View {
   init(headings: [NSMutableAttributedString], rows: [[NSMutableAttributedString]], alignments: [MarkdownColumnAlignment] = [], columnMaxWidths: [Int: CGFloat] = [:], rawMarkdown: String = "") {
     self.alignments = alignments
     self.headings = headings.map { AttributedString($0) }
+    self.headingContents = headings.map { content in
+      if content.containsAttachments(in: NSRange(location: 0, length: content.length)) {
+        return .containsAttachment(string: content)
+      } else {
+        return .text(string: AttributedString(content))
+      }
+    }
     self.rows = rows.map { row in
       row.map { content in
         if content.containsAttachments(in: NSRange(location: 0, length: content.length)) {
@@ -77,17 +85,31 @@ struct TableView: View {
     }
   }
 
-  private func headerView(colIdx: Int) -> some View {
-    HStack(spacing: 0) {
-      Text(headings[colIdx])
+  @ViewBuilder
+  private func headerContent(colIdx: Int) -> some View {
+    switch headingContents[colIdx] {
+    case .containsAttachment(let nsAttributedString):
+      // Header cells previously flattened to Text, which cannot host
+      // attachments — inline math in a header silently vanished.
+      ParagraphView(contents: applyTypographyThemingAndGetContent(nsAttributedString))
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: frameAlignment(forColumn: colIdx))
+        .accessibilityValue(String.itemPositionInTable(rowIndex: 1, totalRow: numOfRows + 1, columnIndex: colIdx + 1, totalColumn: headings.count))
+    case .text(let attributedString):
+      Text(attributedString)
         .foregroundStyle(config.tableStyle.headerTextColor)
         .lineLimit(nil)
         .multilineTextAlignment(textAlignment(forColumn: colIdx))
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: frameAlignment(forColumn: colIdx))
         .if(config.shouldAnimateText) { view in
-          view.fadeInTextTransition(attributedString: headings[colIdx])
+          view.fadeInTextTransition(attributedString: attributedString)
         }
         .accessibilityValue(String.itemPositionInTable(rowIndex: 1, totalRow: numOfRows + 1, columnIndex: colIdx + 1, totalColumn: headings.count))
+    }
+  }
+
+  private func headerView(colIdx: Int) -> some View {
+    HStack(spacing: 0) {
+      headerContent(colIdx: colIdx)
       Spacer()
     }
     .padding(12)

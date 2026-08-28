@@ -107,15 +107,25 @@ final class LatexViewProvider: NSTextAttachmentViewProvider {
     }
     #if canImport(UIKit)
     mathLabel.sizeToFit()
+    mathLabel.layoutIfNeeded()
     let size = mathLabel.bounds.size
     #elseif canImport(AppKit)
     let size = mathLabel.intrinsicContentSize
+    mathLabel.layoutSubtreeIfNeeded()
     #endif
+    // The display list knows the formula's true baseline: placing the
+    // attachment at y = -descent puts the math baseline exactly on the
+    // text baseline. Fall back to cap-height centering only when the
+    // label has not typeset yet.
+    if let display = mathLabel.displayList {
+      let ascent = display.ascent.rounded(.up)
+      let descent = display.descent.rounded(.up) + 1.0
+      return CGRect(x: 0, y: -descent,
+                    width: size.width.rounded(.up),
+                    height: ascent + descent)
+    }
     let height = size.height.rounded(.up) + 1.0
     let font = attributes[.font] as? MDFont ?? MDFont.systemFont(ofSize: fontSize)
-    // Centering on the x-height sinks any expression with ascenders or
-    // superscripts below the visual baseline; the cap height is the
-    // conventional anchor when the attachment's own baseline is unknown.
     let yOffset = (font.capHeight - height) / 2.0
     return CGRect(x: 0, y: yOffset, width: size.width.rounded(.up), height: height)
   }

@@ -23,7 +23,12 @@ public enum LatexCoverage {
       .trimmingCharacters(in: .whitespacesAndNewlines)
     let builder = MTMathListBuilder(string: latex)
     let list = builder.build()
-    if list != nil, builder.error == nil { return nil }
+    if list != nil, builder.error == nil {
+      if builder.numberOfUnknownCommands > 0 {
+        return "[\(builder.numberOfUnknownCommands) placeholder(s)] \(latex)"
+      }
+      return nil
+    }
     let reason = builder.error?.localizedDescription ?? "no output"
     return "[\(reason)] \(latex)"
   }

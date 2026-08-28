@@ -238,11 +238,11 @@ extension String {
       .replacingOccurrences(of: "\\dotsb", with: "\\cdots")
       .replacingOccurrences(of: "\\dotsm", with: "\\cdots")
       .replacingOccurrences(of: "\\dotsi", with: "\\cdots")
-      // Colors are presentation-only; keep the content group.
-      .replacingOccurrences(of: "\\textcolor\\{[^{}]*\\}", with: "",
-                            options: .regularExpression)
-      .replacingOccurrences(of: "\\color\\{[^{}]*\\}", with: "",
-                            options: .regularExpression)
+      // \textcolor with simple (non-nested) content maps onto the
+      // typesetter's native \color, translating CSS color names to the
+      // hex form it requires. Nested content falls through to the
+      // builder's unknown-command recovery.
+      .mappingTextColors()
       // \not + relation precomposes to the slashed Unicode relation.
       .replacingOccurrences(of: "\\not\\ni", with: "\u{220C}")
       .replacingOccurrences(of: "\\not\\in", with: "\\notin")
@@ -269,6 +269,51 @@ extension String {
       .replacingOccurrences(of: "\\smallsetminus", with: "\\setminus")
       .replacingOccurrences(of: "\\dbinom", with: "\\binom")
       .replacingOccurrences(of: "\\tbinom", with: "\\binom")
+  }
+
+  private static let cssColorHex: [String: String] = [
+    "red": "#E5484D", "blue": "#3E63DD", "green": "#30A46C",
+    "purple": "#8E4EC6", "orange": "#F76B15", "teal": "#12A594",
+    "gray": "#8D8D8D", "grey": "#8D8D8D", "black": "#1B1B18",
+    "white": "#FFFFFF", "yellow": "#F5D90A", "pink": "#D6409F",
+    "brown": "#AD7F58", "cyan": "#05A2C2", "magenta": "#D6409F",
+    "violet": "#8E4EC6",
+  ]
+
+  /// `\textcolor{name|#hex}{content}` -> `{\color{#hex}content}` for
+  /// non-nested content; `\color{name}` -> `\color{#hex}`.
+  func mappingTextColors() -> String {
+    var result = self
+    if let regex = try? NSRegularExpression(
+      pattern: #"\\textcolor\{([^{}]+)\}\{([^{}]*)\}"#) {
+      let matches = regex.matches(in: result,
+                                  range: NSRange(result.startIndex..., in: result))
+      for match in matches.reversed() {
+        guard let whole = Range(match.range, in: result),
+              let nameRange = Range(match.range(at: 1), in: result),
+              let contentRange = Range(match.range(at: 2), in: result) else { continue }
+        let name = String(result[nameRange])
+          .trimmingCharacters(in: .whitespaces).lowercased()
+        let hex = name.hasPrefix("#") ? name : Self.cssColorHex[name]
+        guard let hex else { continue }
+        let content = String(result[contentRange])
+        result = result.replacingCharacters(
+          in: whole, with: "{\\color{\(hex)}\(content)}")
+      }
+    }
+    if let colorRegex = try? NSRegularExpression(
+      pattern: #"\\color\{([a-zA-Z]+)\}"#) {
+      let matches = colorRegex.matches(in: result,
+                                       range: NSRange(result.startIndex..., in: result))
+      for match in matches.reversed() {
+        guard let whole = Range(match.range, in: result),
+              let nameRange = Range(match.range(at: 1), in: result),
+              let hex = Self.cssColorHex[String(result[nameRange]).lowercased()]
+        else { continue }
+        result = result.replacingCharacters(in: whole, with: "\\color{\(hex)}")
+      }
+    }
+    return result
   }
 
   func strippingBoxedLatex() -> String {

@@ -223,7 +223,6 @@ extension String {
       .replacingImplies()
       .replacingHarpoons()
       .replacingDots()
-      .strippingBracketSizeCommands()
   }
 
   /// This strips "\boxed" string from a given latex. This is because our rendering engine does not support \boxed{...} yet.
@@ -308,7 +307,10 @@ extension String {
     return self.replacing(LaTexPreProcessorImpl.dotsLatex, with: "\\ldots")
   }
 
-  /// Stripping commands to specify bracket sizes(`\Biggl` etc) which is unsupported
+  /// No longer applied: the bundled typesetter fork renders the full
+  /// \big/\Big/\bigg/\Bigg family (incl. l/r/m variants) natively, so
+  /// stripping them flattened deliberately sized delimiters to normal
+  /// size. Kept for reference.
   func strippingBracketSizeCommands() -> String {
     return self.replacing(LaTexPreProcessorImpl.bracketSize, with: "")
   }

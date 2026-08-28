@@ -21,7 +21,11 @@ public enum LatexCoverage {
       .replacingOccurrences(of: "```blockmath", with: "")
       .replacingOccurrences(of: "```", with: "")
       .trimmingCharacters(in: .whitespacesAndNewlines)
-    if (try? MTMathListBuilder.build(from: latex)) != nil { return nil }
-    return latex
+    do {
+      _ = try MTMathListBuilder.build(from: latex)
+      return nil
+    } catch {
+      return "[\(error.localizedDescription)] \(latex)"
+    }
   }
 }

@@ -63,7 +63,8 @@ struct CodeBlockView: View {
       // all janky.
       transaction.animation = nil
     }
-    .padding(16)
+    .padding(.horizontal, 16)
+    .padding(.vertical, 12)
   }
 
   var body: some View {
@@ -96,7 +97,7 @@ struct CodeBlockView: View {
         }
       }.frame(maxWidth: .infinity)
         .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.vertical, 9)
         .background(
           backgroundColor
             .clipShape(.rect(
@@ -120,7 +121,14 @@ struct CodeBlockView: View {
             ))
           )
         })
-    }.onChange(of: copied, perform: { isCopied in
+    }
+    .overlay {
+      if let borderColor = config.codeBlockConfig.borderColor {
+        RoundedRectangle(cornerRadius: 20)
+          .stroke(borderColor, lineWidth: 1)
+      }
+    }
+    .onChange(of: copied, perform: { isCopied in
       if isCopied {
         Task {
           try await Task.sleep(seconds: 3)

@@ -46,7 +46,7 @@ private struct InternalBlockQuoteView: View {
           .fixedSize(horizontal: false, vertical: true)
         }
       }
-      .padding(.vertical, 4.0)
+      .padding(.vertical, 3.0)
       .fixedSize(horizontal: false, vertical: true)
     }
     .fixedSize(horizontal: false, vertical: true)
@@ -62,7 +62,7 @@ struct QuoteTextView: View {
     Text(text)
       .font(config.blockQuoteStyle.textFonts)
       .foregroundStyle(config.blockQuoteStyle.textColor)
-      .padding(.vertical, 4.0)
+      .padding(.vertical, 3.0)
       .fixedSize(horizontal: false, vertical: true)
   }
 }

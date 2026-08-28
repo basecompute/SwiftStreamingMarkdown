@@ -16,9 +16,9 @@ struct ThematicBreakView: View {
     // configured color explicitly, at a visible weight.
     Rectangle()
       .fill(config.thematicBreakColor)
-      .frame(height: 2)
+      .frame(height: 1)
       .frame(maxWidth: .infinity)
-      .padding([.top, .bottom], 9)
+      .padding([.top, .bottom], 6)
       .transition(.opacity)
   }
 }

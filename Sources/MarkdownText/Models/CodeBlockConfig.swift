@@ -70,6 +70,10 @@ public struct CodeBlockConfig: Hashable, Sendable {
   /// default for any non-default theme.
   public let backgroundColor: Color?
 
+  /// Optional border drawn around the whole code card. `nil` (the
+  /// default) keeps the previous borderless look.
+  public let borderColor: Color?
+
   /// Foreground color applied to the code block chrome (language label and
   /// copy control). `nil` falls back to the bundled `Stone350`.
   public let foregroundColor: Color?
@@ -89,11 +93,13 @@ public struct CodeBlockConfig: Hashable, Sendable {
   public init(
     theme: Theme = .default,
     backgroundColor: Color? = nil,
+    borderColor: Color? = nil,
     foregroundColor: Color? = nil
   ) {
     self.init(
       theme: theme,
       backgroundColor: backgroundColor,
+      borderColor: borderColor,
       foregroundColor: foregroundColor,
       codeTextFonts: nil,
       chromeTextFonts: nil
@@ -110,12 +116,14 @@ public struct CodeBlockConfig: Hashable, Sendable {
   public init(
     theme: Theme = .default,
     backgroundColor: Color? = nil,
+    borderColor: Color? = nil,
     foregroundColor: Color? = nil,
     codeTextFonts: TextFonts?,
     chromeTextFonts: TextFonts?
   ) {
     self.theme = theme
     self.backgroundColor = backgroundColor
+    self.borderColor = borderColor
     self.foregroundColor = foregroundColor
     self.codeTextFonts = codeTextFonts ?? Typography.codeTextFonts
     self.chromeTextFonts = chromeTextFonts ?? Typography.smallTextFonts

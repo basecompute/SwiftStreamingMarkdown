@@ -113,7 +113,10 @@ final class LatexViewProvider: NSTextAttachmentViewProvider {
     #endif
     let height = size.height.rounded(.up) + 1.0
     let font = attributes[.font] as? MDFont ?? MDFont.systemFont(ofSize: fontSize)
-    let yOffset = (font.xHeight - height) / 2.0
+    // Centering on the x-height sinks any expression with ascenders or
+    // superscripts below the visual baseline; the cap height is the
+    // conventional anchor when the attachment's own baseline is unknown.
+    let yOffset = (font.capHeight - height) / 2.0
     return CGRect(x: 0, y: yOffset, width: size.width.rounded(.up), height: height)
   }
 }

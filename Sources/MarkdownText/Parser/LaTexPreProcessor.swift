@@ -285,7 +285,7 @@ extension String {
   func mappingTextColors() -> String {
     var result = self
     if let regex = try? NSRegularExpression(
-      pattern: #"\\textcolor\{([^{}]+)\}\{([^{}]*)\}"#) {
+      pattern: #"\\textcolor\{([^{}]+)\}\{((?:[^{}]|\{[^{}]*\})*)\}"#) {
       let matches = regex.matches(in: result,
                                   range: NSRange(result.startIndex..., in: result))
       for match in matches.reversed() {

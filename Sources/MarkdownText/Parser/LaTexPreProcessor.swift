@@ -61,6 +61,23 @@ final class LaTexPreProcessorImpl: LaTexPreProcessor {
     "\\)"
   }
 
+  static let inlineDollarMath = Regex {
+    "$"
+    Capture(as: latexRef) {
+      // First and last characters are non-space by construction (no
+      // lookbehind in RegexBuilder), so "$ 5 and $ 7" stays text.
+      One(CharacterClass.anyOf("$ \t\n").inverted)
+      Optionally {
+        ZeroOrMore(CharacterClass.anyOf("$\n").inverted, .reluctant)
+        One(CharacterClass.anyOf("$ \t\n").inverted)
+      }
+    }
+    "$"
+    NegativeLookahead {
+      CharacterClass.digit
+    }
+  }
+
   static let boxedLatex = Regex {
     Capture {
       "\\boxed"
@@ -161,11 +178,20 @@ final class LaTexPreProcessorImpl: LaTexPreProcessor {
 
   /// This wraps inline math as inline code to avoid over-unescaping issue
   func processInlineMath(input: String, rules: Set<MarkdownParseOption.LatexMatching>) -> String {
-    guard rules.contains(.inlineSlashBracket) else { return input }
-    return input.replacing(Self.inlineParenthesisMath, with: { match in
-      let latex = String(match[Self.latexRef]).filteringUnsupportedSyntaxes()
-      return "`\\(\(latex)\\)`"
-    })
+    var result = input
+    if rules.contains(.inlineSlashBracket) {
+      result = result.replacing(Self.inlineParenthesisMath, with: { match in
+        let latex = String(match[Self.latexRef]).filteringUnsupportedSyntaxes()
+        return "`\\(\(latex)\\)`"
+      })
+    }
+    if rules.contains(.inlineDollar) {
+      result = result.replacing(Self.inlineDollarMath, with: { match in
+        let latex = String(match[Self.latexRef]).filteringUnsupportedSyntaxes()
+        return "`\\(\(latex)\\)`"
+      })
+    }
+    return result
   }
 
   // MARK: - Convenience overloads (default to every supported rule)

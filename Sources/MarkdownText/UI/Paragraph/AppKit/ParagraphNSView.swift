@@ -198,7 +198,9 @@ class ParagraphNSView: NSTextView {
     isVerticallyResizable = true
     isHorizontallyResizable = false
 
-    linkTextAttributes = [:]
+    // Keep link VISUALS from the attributed string, but let AppKit show
+    // the pointing-hand cursor over link runs.
+    linkTextAttributes = [.cursor: NSCursor.pointingHand]
 
     setContentHuggingPriority(.defaultHigh, for: .vertical)
     setContentCompressionResistancePriority(.defaultHigh, for: .vertical)

@@ -11,10 +11,14 @@ struct ThematicBreakView: View {
   @Environment(\.markdownConfig) var config: MarkdownRenderConfig
 
   var body: some View {
-    Divider()
-      .foregroundColor(config.thematicBreakColor)
-      .frame(height: 4)
-      .padding([.top, .bottom], 8)
+    // Divider ignores foregroundColor on macOS/iOS, which left the rule
+    // at the faint system default regardless of configuration. Paint the
+    // configured color explicitly, at a visible weight.
+    Rectangle()
+      .fill(config.thematicBreakColor)
+      .frame(height: 2)
+      .frame(maxWidth: .infinity)
+      .padding([.top, .bottom], 9)
       .transition(.opacity)
   }
 }

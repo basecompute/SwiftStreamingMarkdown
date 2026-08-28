@@ -47,12 +47,18 @@ struct SingleBlockView: View {
           .fixedSize(horizontal: false, vertical: true)
           .transition(.opacity)
       case .latex(_, let latexString):
-        ScrollView(.horizontal) {
-          HStack(spacing: 0) {
+        // Display math is conventionally centered, with breathing room —
+        // it was pinned leading and hugged its glyphs vertically. When it
+        // is wider than the container, fall back to a horizontal scroll.
+        ViewThatFits(in: .horizontal) {
+          BlockMathView(latex: latexString, color: config.paragraphStyle.textColor)
+            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity, alignment: .center)
+          ScrollView(.horizontal) {
             BlockMathView(latex: latexString, color: config.paragraphStyle.textColor)
-            Spacer()
-          }
-        }.scrollIndicators(.hidden)
+              .padding(.vertical, 6)
+          }.scrollIndicators(.hidden)
+        }
       case .orderedList(_, let items):
         OrderedListView(items: items)
       case .unorderedList(_, let items, let nestedLevel):

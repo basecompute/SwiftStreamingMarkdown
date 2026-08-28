@@ -21,11 +21,10 @@ public enum LatexCoverage {
       .replacingOccurrences(of: "```blockmath", with: "")
       .replacingOccurrences(of: "```", with: "")
       .trimmingCharacters(in: .whitespacesAndNewlines)
-    do {
-      _ = try MTMathListBuilder.build(from: latex)
-      return nil
-    } catch {
-      return "[\(error.localizedDescription)] \(latex)"
-    }
+    let builder = MTMathListBuilder(string: latex)
+    let list = builder.build()
+    if list != nil, builder.error == nil { return nil }
+    let reason = builder.error?.localizedDescription ?? "no output"
+    return "[\(reason)] \(latex)"
   }
 }

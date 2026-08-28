@@ -10,7 +10,11 @@ extension BlockMathView {
   /// Whether iosMath can parse this source at all — a failed parse
   /// renders an empty label, so callers show the raw source instead.
   static func canTypeset(_ latex: String) -> Bool {
-    (try? MTMathListBuilder.build(from: latex)) != nil
+    // The throwing bridge returns partial lists alongside errors, so a
+    // failed parse can look like success; the instance API is explicit.
+    let builder = MTMathListBuilder(string: latex)
+    let list = builder.build()
+    return list != nil && builder.error == nil
   }
 }
 

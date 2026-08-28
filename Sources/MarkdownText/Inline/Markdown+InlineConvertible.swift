@@ -162,6 +162,14 @@ extension Markdown.InlineCode: InlineConvertible {
       let lightHex = textColor.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light)).toHexString()
       let darkHex = textColor.resolvedColor(with: UITraitCollection(userInterfaceStyle: .dark)).toHexString()
       #elseif canImport(AppKit)
+      // macOS inline math bypasses the view-provider route entirely —
+      // see LatexInlineImage for why.
+      if let attachment = LatexInlineImage.attachment(
+          latex: codeContent, fontSize: font.pointSize,
+          lightColor: textColor.resolvedForAppearance(.aqua),
+          darkColor: textColor.resolvedForAppearance(.darkAqua)) {
+        return NSMutableAttributedString(attachment: attachment)
+      }
       let lightHex = textColor.resolvedForAppearance(.aqua).toHexString()
       let darkHex = textColor.resolvedForAppearance(.darkAqua).toHexString()
       #endif

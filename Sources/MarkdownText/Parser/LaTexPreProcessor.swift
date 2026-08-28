@@ -232,6 +232,36 @@ extension String {
   /// otherwise fall back to raw source.
   func rewritingCommonAliases() -> String {
     return self
+      // \dots variants must resolve before the generic \dots pass,
+      // which would otherwise turn \dotsc into \ldotsc.
+      .replacingOccurrences(of: "\\dotsc", with: "\\ldots")
+      .replacingOccurrences(of: "\\dotso", with: "\\ldots")
+      .replacingOccurrences(of: "\\dotsb", with: "\\cdots")
+      .replacingOccurrences(of: "\\dotsm", with: "\\cdots")
+      .replacingOccurrences(of: "\\dotsi", with: "\\cdots")
+      // Colors are presentation-only; keep the content group.
+      .replacingOccurrences(of: "\\textcolor\\{[^{}]*\\}", with: "",
+                            options: .regularExpression)
+      .replacingOccurrences(of: "\\color\\{[^{}]*\\}", with: "",
+                            options: .regularExpression)
+      // \not + relation precomposes to the slashed Unicode relation.
+      .replacingOccurrences(of: "\\not\\ni", with: "\u{220C}")
+      .replacingOccurrences(of: "\\not\\in", with: "\\notin")
+      .replacingOccurrences(of: "\\not\\subseteq", with: "\u{2288}")
+      .replacingOccurrences(of: "\\not\\subset", with: "\u{2284}")
+      .replacingOccurrences(of: "\\not\\supseteq", with: "\u{2289}")
+      .replacingOccurrences(of: "\\not\\supset", with: "\u{2285}")
+      .replacingOccurrences(of: "\\not\\equiv", with: "\u{2262}")
+      .replacingOccurrences(of: "\\not=", with: "\\neq")
+      // The numbered variants render like their starred/aligned kin.
+      .replacingOccurrences(of: "\\begin{align*}", with: "\\begin{aligned}")
+      .replacingOccurrences(of: "\\end{align*}", with: "\\end{aligned}")
+      .replacingOccurrences(of: "\\begin{align}", with: "\\begin{aligned}")
+      .replacingOccurrences(of: "\\end{align}", with: "\\end{aligned}")
+      // \phantom reserves its argument's width; a quad is the closest
+      // supported stand-in.
+      .replacingOccurrences(of: "\\phantom\\{[^{}]*\\}", with: "\\quad ",
+                            options: .regularExpression)
       .replacingOccurrences(of: "\\operatorname*", with: "\\mathrm")
       .replacingOccurrences(of: "\\operatorname", with: "\\mathrm")
       .replacingOccurrences(of: "\\textnormal", with: "\\text")

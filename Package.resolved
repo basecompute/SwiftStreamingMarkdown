@@ -22,7 +22,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/basecompute/iosMath",
       "state" : {
-        "revision" : "da4909f4688bd7669151bd7e808db8d24cc7f6ae"
+        "branch" : "19267ff",
+        "revision" : "19267ff4aa3cb57181468df029e9f053f9f45ec8"
       }
     },
     {

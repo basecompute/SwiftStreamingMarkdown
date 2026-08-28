@@ -47,17 +47,33 @@ struct SingleBlockView: View {
           .fixedSize(horizontal: false, vertical: true)
           .transition(.opacity)
       case .latex(_, let latexString):
-        // Display math is conventionally centered, with breathing room —
-        // it was pinned leading and hugged its glyphs vertically. When it
-        // is wider than the container, fall back to a horizontal scroll.
-        ViewThatFits(in: .horizontal) {
-          BlockMathView(latex: latexString, color: config.paragraphStyle.textColor)
-            .padding(.vertical, 6)
-            .frame(maxWidth: .infinity, alignment: .center)
-          ScrollView(.horizontal) {
+        if BlockMathView.canTypeset(latexString) {
+          // Display math is conventionally centered, with breathing room —
+          // it was pinned leading and hugged its glyphs vertically. When it
+          // is wider than the container, fall back to a horizontal scroll.
+          ViewThatFits(in: .horizontal) {
             BlockMathView(latex: latexString, color: config.paragraphStyle.textColor)
               .padding(.vertical, 6)
-          }.scrollIndicators(.hidden)
+              .frame(maxWidth: .infinity, alignment: .center)
+            ScrollView(.horizontal) {
+              BlockMathView(latex: latexString, color: config.paragraphStyle.textColor)
+                .padding(.vertical, 6)
+            }.scrollIndicators(.hidden)
+          }
+        } else {
+          // The typesetter covers a LaTeX subset; commands outside it
+          // used to render NOTHING, so whole formulas silently vanished.
+          // Standard renderer practice (KaTeX, MathJax) is to show the
+          // source when typesetting fails.
+          ScrollView(.horizontal) {
+            Text(latexString)
+              .font(.system(size: 12, design: .monospaced))
+              .foregroundStyle(config.paragraphStyle.textColor.opacity(0.75))
+              .padding(8)
+          }
+          .scrollIndicators(.hidden)
+          .background(config.inlineStyle.codeBackgroundColor)
+          .clipShape(RoundedRectangle(cornerRadius: 6))
         }
       case .orderedList(_, let items):
         OrderedListView(items: items)

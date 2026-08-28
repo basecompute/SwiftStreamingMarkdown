@@ -6,6 +6,14 @@
 import SwiftUI
 import iosMath
 
+extension BlockMathView {
+  /// Whether iosMath can parse this source at all — a failed parse
+  /// renders an empty label, so callers show the raw source instead.
+  static func canTypeset(_ latex: String) -> Bool {
+    (try? MTMathListBuilder.build(from: latex)) != nil
+  }
+}
+
 #if canImport(UIKit)
 
 struct BlockMathView: UIViewRepresentable {

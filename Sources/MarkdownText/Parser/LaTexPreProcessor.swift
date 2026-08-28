@@ -215,6 +215,7 @@ extension String {
 
   func filteringUnsupportedSyntaxes() -> String {
     return self
+      .rewritingCommonAliases()
       .strippingBoxedLatex()
       .replacingfrac()
       .replacingPrime()
@@ -226,6 +227,21 @@ extension String {
   }
 
   /// This strips "\boxed" string from a given latex. This is because our rendering engine does not support \boxed{...} yet.
+  /// Common commands outside the typesetter's subset with faithful
+  /// stand-ins — each rewrite keeps a formula renderable that would
+  /// otherwise fall back to raw source.
+  func rewritingCommonAliases() -> String {
+    return self
+      .replacingOccurrences(of: "\\operatorname*", with: "\\mathrm")
+      .replacingOccurrences(of: "\\operatorname", with: "\\mathrm")
+      .replacingOccurrences(of: "\\textnormal", with: "\\text")
+      .replacingOccurrences(of: "\\mathscr", with: "\\mathcal")
+      .replacingOccurrences(of: "\\varnothing", with: "\\emptyset")
+      .replacingOccurrences(of: "\\smallsetminus", with: "\\setminus")
+      .replacingOccurrences(of: "\\dbinom", with: "\\binom")
+      .replacingOccurrences(of: "\\tbinom", with: "\\binom")
+  }
+
   func strippingBoxedLatex() -> String {
     return self.replacing(LaTexPreProcessorImpl.boxedLatex, with: "")
   }

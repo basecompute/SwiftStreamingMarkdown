@@ -193,7 +193,7 @@ struct TableView: View {
         scrollView
       }
 
-      if isExpanded {
+      if isExpanded, config.tableStyle.showsActionButtons {
         HStack(spacing: 0) {
           tableCopyButton
           tableDownloadButton

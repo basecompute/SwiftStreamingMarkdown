@@ -95,6 +95,40 @@ final class LatexViewProvider: NSTextAttachmentViewProvider {
     label.fontSize = fontSize
     label.setContentHuggingPriority(.defaultHigh, for: .vertical)
     self.view = label
+
+    // TextKit 1 (the AppKit NSTextView path) takes an attachment's
+    // vertical placement from NSTextAttachment.bounds, not from the
+    // provider's attachmentBounds override — with the default y = 0 the
+    // label's BOTTOM sat on the text baseline and any formula with
+    // depth (fractions, subscripts) floated by exactly its descent.
+    // Typeset now and encode the true baseline into the bounds.
+    let size = label.intrinsicContentSize
+    label.frame = CGRect(origin: .zero, size: size)
+    #if canImport(UIKit)
+    label.layoutIfNeeded()
+    #elseif canImport(AppKit)
+    label.layoutSubtreeIfNeeded()
+    if let display = label.displayList {
+      let descent = display.descent.rounded(.up) + 1.0
+      let ascent = display.ascent.rounded(.up)
+      // Reserve the formula's depth in the line box…
+      textAttachment?.bounds = CGRect(x: 0, y: -descent,
+                                      width: size.width.rounded(.up),
+                                      height: ascent + descent)
+      // …and place the glyphs on the baseline ourselves: AppKit's
+      // TextKit 1 provider support pins the view's BOTTOM to the text
+      // baseline whatever the bounds' y says, so the label hangs inside
+      // a carrier view, shifted down by its descent. The carrier does
+      // not clip, letting the depth draw below the carrier's bottom.
+      let carrier = NSView(frame: CGRect(origin: .zero, size: size))
+      // Exact, unrounded depth: the rounded/padded value above reserves
+      // line space, but using it for the shift pushes the formula a
+      // point-and-a-half low.
+      label.frame.origin = CGPoint(x: 0, y: -display.descent)
+      carrier.addSubview(label)
+      self.view = carrier
+    }
+    #endif
   }
 
   override func attachmentBounds(for attributes: [NSAttributedString.Key: Any],

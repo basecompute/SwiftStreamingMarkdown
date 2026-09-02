@@ -15,9 +15,10 @@ import Equatable
 public protocol StreamedMarkdownSource {
   var text: AsyncStream<String> { get }
 
-  /// Called after a snapshot has been parsed and published to the rendered
-  /// document. Sources can use this to coordinate completion without guessing
-  /// how long parsing and the main-actor update took.
+  /// Called after a snapshot has been parsed and SwiftUI has applied the
+  /// rendered document to its native view hierarchy. Sources can use this to
+  /// coordinate completion without guessing how long parsing and view
+  /// reconciliation took.
   func didRenderSnapshot(_ text: String) async
 }
 
@@ -59,6 +60,11 @@ public struct StreamedMarkdownView: View {
       config: config,
       listener: controller.listener
     )
+    .background {
+      SnapshotApplicationObserver(revision: controller.renderRevision) { revision in
+        controller.didApplySnapshot(revision)
+      }
+    }
     .task {
       await controller.start()
     }
@@ -70,15 +76,18 @@ public struct StreamedMarkdownView: View {
   }
 }
 
+@MainActor
 final class StreamedMarkdownController: ObservableObject {
 
   @Published var markdownToRender: RenderableDocument = .empty
+  @Published private(set) var renderRevision = 0
   let config: MarkdownRenderConfig
   let listener: MarkdownListener?
 
   private let source: StreamedMarkdownSource
   private let parser = MarkdownParserImpl()
   private var task: Task<Void, Never>?
+  private var pendingSnapshots: [Int: String] = [:]
 
   init(
     source: StreamedMarkdownSource,
@@ -98,16 +107,70 @@ final class StreamedMarkdownController: ObservableObject {
         if Task.isCancelled { return }
         let renderable = await self.parser.parse(text: text, config: self.config)
         if Task.isCancelled { return }
-        await MainActor.run {
-          self.markdownToRender = renderable
-        }
-        await self.source.didRenderSnapshot(text)
+        self.renderRevision &+= 1
+        self.pendingSnapshots[self.renderRevision] = text
+        self.markdownToRender = renderable
       }
+    }
+  }
+
+  /// Called by a platform view after SwiftUI has applied a published document
+  /// to its native view hierarchy. SwiftUI can coalesce revisions, so only the
+  /// newest applied revision is acknowledged and older pending values are
+  /// discarded rather than reported as rendered.
+  func didApplySnapshot(_ revision: Int) {
+    guard let text = pendingSnapshots[revision] else { return }
+    pendingSnapshots = pendingSnapshots.filter { $0.key > revision }
+    Task {
+      await source.didRenderSnapshot(text)
     }
   }
 
   func end() async {
     task?.cancel()
     task = nil
+    pendingSnapshots.removeAll()
   }
 }
+
+#if canImport(AppKit)
+import AppKit
+
+/// An AppKit reconciliation marker. `updateNSView` runs only after SwiftUI has
+/// propagated the new revision through the view tree; dispatching once more on
+/// the main queue lets sibling representables apply their content first.
+private struct SnapshotApplicationObserver: NSViewRepresentable {
+  let revision: Int
+  let onApply: (Int) -> Void
+
+  func makeNSView(context: Context) -> NSView {
+    NSView(frame: .zero)
+  }
+
+  func updateNSView(_ nsView: NSView, context: Context) {
+    let revision = revision
+    DispatchQueue.main.async {
+      onApply(revision)
+    }
+  }
+}
+#elseif canImport(UIKit)
+import UIKit
+
+/// The UIKit equivalent of the SwiftUI reconciliation marker above.
+private struct SnapshotApplicationObserver: UIViewRepresentable {
+  let revision: Int
+  let onApply: (Int) -> Void
+
+  func makeUIView(context: Context) -> UIView {
+    UIView(frame: .zero)
+  }
+
+  func updateUIView(_ uiView: UIView, context: Context) {
+    let revision = revision
+    DispatchQueue.main.async {
+      onApply(revision)
+    }
+  }
+}
+#endif

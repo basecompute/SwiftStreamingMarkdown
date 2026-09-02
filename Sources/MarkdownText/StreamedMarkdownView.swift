@@ -14,6 +14,15 @@ import Equatable
 /// re-parses each snapshot and updates the rendered output.
 public protocol StreamedMarkdownSource {
   var text: AsyncStream<String> { get }
+
+  /// Called after a snapshot has been parsed and published to the rendered
+  /// document. Sources can use this to coordinate completion without guessing
+  /// how long parsing and the main-actor update took.
+  func didRenderSnapshot(_ text: String) async
+}
+
+public extension StreamedMarkdownSource {
+  func didRenderSnapshot(_ text: String) async {}
 }
 
 /// A SwiftUI view that incrementally parses and renders streamed Markdown.
@@ -92,6 +101,7 @@ final class StreamedMarkdownController: ObservableObject {
         await MainActor.run {
           self.markdownToRender = renderable
         }
+        await self.source.didRenderSnapshot(text)
       }
     }
   }

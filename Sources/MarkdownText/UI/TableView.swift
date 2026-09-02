@@ -63,6 +63,14 @@ struct TableView: View {
     return rows.count
   }
 
+  private var shouldAnimateHeader: Bool {
+    config.shouldAnimateText && isActiveStreamingBlock && rows.isEmpty
+  }
+
+  private func shouldAnimateRow(_ rowIndex: Int) -> Bool {
+    config.shouldAnimateText && isActiveStreamingBlock && rowIndex == rows.count - 1
+  }
+
   /// The GFM delimiter row's alignment for a column, defaulting to `.leading`
   /// for a table that declares none.
   private func alignment(forColumn index: Int) -> MarkdownColumnAlignment {
@@ -93,6 +101,7 @@ struct TableView: View {
       // Header cells previously flattened to Text, which cannot host
       // attachments — inline math in a header silently vanished.
       ParagraphView(contents: applyTypographyThemingAndGetContent(nsAttributedString))
+        .environment(\.isActiveStreamingMarkdownBlock, shouldAnimateHeader)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: frameAlignment(forColumn: colIdx))
         .accessibilityValue(String.itemPositionInTable(rowIndex: 1, totalRow: numOfRows + 1, columnIndex: colIdx + 1, totalColumn: headings.count))
     case .text(let attributedString):
@@ -101,7 +110,7 @@ struct TableView: View {
         .lineLimit(nil)
         .multilineTextAlignment(textAlignment(forColumn: colIdx))
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: frameAlignment(forColumn: colIdx))
-        .if(config.shouldAnimateText && isActiveStreamingBlock) { view in
+        .if(shouldAnimateHeader) { view in
           view.fadeInTextTransition(attributedString: attributedString)
         }
         .accessibilityValue(String.itemPositionInTable(rowIndex: 1, totalRow: numOfRows + 1, columnIndex: colIdx + 1, totalColumn: headings.count))
@@ -158,6 +167,7 @@ struct TableView: View {
     case .containsAttachment(let nsAttributedString):
       HStack(spacing: 0) {
         ParagraphView(contents: applyTypographyThemingAndGetContent(nsAttributedString))
+          .environment(\.isActiveStreamingMarkdownBlock, shouldAnimateRow(rowIdx))
           .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: frameAlignment(forColumn: colIdx))
           .accessibilityValue(String.itemPositionInTable(rowIndex: rowIdx + 2, totalRow: numOfRows + 1, columnIndex: colIdx + 1, totalColumn: headings.count))
         Spacer()
@@ -173,7 +183,7 @@ struct TableView: View {
           .lineLimit(nil)
           .multilineTextAlignment(textAlignment(forColumn: colIdx))
           .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: frameAlignment(forColumn: colIdx))
-          .if(config.shouldAnimateText && isActiveStreamingBlock) { view in
+          .if(shouldAnimateRow(rowIdx)) { view in
             view.fadeInTextTransition(attributedString: attributedString)
           }
           .accessibilityValue(String.itemPositionInTable(rowIndex: rowIdx + 2, totalRow: numOfRows + 1, columnIndex: colIdx + 1, totalColumn: headings.count))

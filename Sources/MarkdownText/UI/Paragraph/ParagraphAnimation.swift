@@ -6,8 +6,8 @@
 import Foundation
 
 enum ParagraphAnimationConstants {
-  static let fadeInDuration: CFTimeInterval = 0.5
-  static let delayBetweenWordsRatio: Double = 0.1
+  static let fadeInDuration: CFTimeInterval = MarkdownRenderConfig.defaultTextAnimationDuration
+  static let staggerDuration: Double = MarkdownRenderConfig.defaultTextAnimationStaggerDuration
 }
 
 struct FadeAnimationData {

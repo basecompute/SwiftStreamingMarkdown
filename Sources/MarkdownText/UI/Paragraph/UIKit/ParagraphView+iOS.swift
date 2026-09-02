@@ -28,7 +28,7 @@ struct ParagraphView: UIViewRepresentable {
 
     if config.shouldAnimateText {
       view.alpha = 0
-      UIView.animate(withDuration: ParagraphUIView.animationDuration) {
+      UIView.animate(withDuration: config.textAnimationDuration) {
         view.alpha = 1
       }
     }
@@ -39,7 +39,13 @@ struct ParagraphView: UIViewRepresentable {
   func updateUIView(_ view: ParagraphUIView, context: Context) {
     if view.paragraphContents != contents || view.lineSpacing != lineSpacing {
       let shouldAnimate = view.window != nil && config.shouldAnimateText // only animate when visible
-      view.setParagraphContents(contents, lineSpacing: lineSpacing, animatedByWord: shouldAnimate)
+      view.setParagraphContents(
+        contents,
+        lineSpacing: lineSpacing,
+        animatedByWord: shouldAnimate,
+        animationDuration: config.textAnimationDuration,
+        animationStaggerDuration: config.textAnimationStaggerDuration
+      )
     }
     view.setTextContextMenu(config.resolvedTextContextMenu)
     view.setMarkdownController(markdownController)

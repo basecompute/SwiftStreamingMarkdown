@@ -15,6 +15,10 @@ import SwiftUI
 public struct MarkdownRenderConfig: Hashable, Sendable {
   /// When `true`, newly appended text fades in instead of appearing instantly.
   public let shouldAnimateText: Bool
+  /// Duration of the fade applied to each newly appended word.
+  public let textAnimationDuration: TimeInterval
+  /// Total interval over which newly appended words begin fading in.
+  public let textAnimationStaggerDuration: TimeInterval
   /// Styling applied to block-quote content.
   public let blockQuoteStyle: MarkdownTextStyle
   /// Per-level heading styling.
@@ -217,6 +221,10 @@ public struct MarkdownRenderConfig: Hashable, Sendable {
 
   /// Default inter-block spacing.
   public static let defaultBlockSpacing: CGFloat = 30
+  /// Default duration of the fade applied to each newly appended word.
+  public static let defaultTextAnimationDuration: TimeInterval = 0.5
+  /// Default total interval over which newly appended words begin fading in.
+  public static let defaultTextAnimationStaggerDuration: TimeInterval = 0.1
   /// Default color for `thematicBreakColor`.
   public static let defaultThematicBreakColor: Color = Color.Theme.Stroke.Default.Default300
   /// Default styling for `blockQuoteStyle`.
@@ -274,6 +282,8 @@ public struct MarkdownRenderConfig: Hashable, Sendable {
   /// override only the fields they care about.
   public init(
     shouldAnimateText: Bool = false,
+    textAnimationDuration: TimeInterval = MarkdownRenderConfig.defaultTextAnimationDuration,
+    textAnimationStaggerDuration: TimeInterval = MarkdownRenderConfig.defaultTextAnimationStaggerDuration,
     blockQuoteStyle: MarkdownTextStyle = MarkdownRenderConfig.defaultBlockQuoteStyle,
     headingStyle: MarkdownHeadingTextStyle = MarkdownRenderConfig.defaultHeadingStyle,
     orderedListStyle: MarkdownTextStyle = MarkdownRenderConfig.defaultOrderedListStyle,
@@ -289,6 +299,8 @@ public struct MarkdownRenderConfig: Hashable, Sendable {
     imageConfig: ImageConfig = .disabled
   ) {
     self.shouldAnimateText = shouldAnimateText
+    self.textAnimationDuration = textAnimationDuration
+    self.textAnimationStaggerDuration = textAnimationStaggerDuration
     self.blockQuoteStyle = blockQuoteStyle
     self.headingStyle = headingStyle
     self.orderedListStyle = orderedListStyle

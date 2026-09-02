@@ -21,7 +21,6 @@ private struct CachedParagraphUIViewSize {
 
 class ParagraphUIView: UITextView {
   private static let jsonEncoder = JSONEncoder()
-  static let animationDuration: CFTimeInterval = ParagraphAnimationConstants.fadeInDuration
 
   private(set) var paragraphContents: NSMutableAttributedString = NSMutableAttributedString()
   private(set) var lineSpacing: CGFloat?
@@ -99,7 +98,13 @@ class ParagraphUIView: UITextView {
     invalidateIntrinsicContentSize()
   }
 
-  func setParagraphContents(_ newContents: NSMutableAttributedString, lineSpacing: CGFloat? = nil, animatedByWord: Bool) {
+  func setParagraphContents(
+    _ newContents: NSMutableAttributedString,
+    lineSpacing: CGFloat? = nil,
+    animatedByWord: Bool,
+    animationDuration: TimeInterval = ParagraphAnimationConstants.fadeInDuration,
+    animationStaggerDuration: TimeInterval = ParagraphAnimationConstants.staggerDuration
+  ) {
     // Keep the cached interface style up to date for citation preview rendering.
     // This runs on the main thread so it's safe to read traitCollection here.
     AppAppearance.update(style: traitCollection.userInterfaceStyle)
@@ -139,12 +144,12 @@ class ParagraphUIView: UITextView {
       let newContentRange = NSRange(location: oldAttributedString.length, length: newContentLength)
       let wordRanges = attributedText.splitIntoWords(withIn: newContentRange)
       let wordCount = wordRanges.count
-      let delayBetweenWords: Double = ParagraphAnimationConstants.delayBetweenWordsRatio / Double(wordCount)
+      let delayBetweenWords = animationStaggerDuration / Double(max(wordCount, 1))
       let baseStartTime = CACurrentMediaTime()
       for (index, wordRange) in wordRanges.enumerated() {
         let animationData = FadeAnimationData(
           startTime: baseStartTime + Double(index) * delayBetweenWords,
-          duration: Self.animationDuration,
+          duration: animationDuration,
           range: wordRange
         )
         activeAnimations.append(animationData)

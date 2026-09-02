@@ -33,7 +33,7 @@ struct ParagraphView: NSViewRepresentable {
     if config.shouldAnimateText {
       view.alphaValue = 0
       NSAnimationContext.runAnimationGroup { ctx in
-        ctx.duration = ParagraphNSView.animationDuration
+        ctx.duration = config.textAnimationDuration
         view.animator().alphaValue = 1
       }
     }
@@ -44,7 +44,13 @@ struct ParagraphView: NSViewRepresentable {
   func updateNSView(_ view: ParagraphNSView, context: Context) {
     if view.paragraphContents != contents || view.lineSpacing != lineSpacing {
       let shouldAnimate = view.window != nil && config.shouldAnimateText
-      view.setParagraphContents(contents, lineSpacing: lineSpacing, animatedByWord: shouldAnimate)
+      view.setParagraphContents(
+        contents,
+        lineSpacing: lineSpacing,
+        animatedByWord: shouldAnimate,
+        animationDuration: config.textAnimationDuration,
+        animationStaggerDuration: config.textAnimationStaggerDuration
+      )
     }
     view.setTextContextMenu(config.resolvedTextContextMenu)
     view.setMarkdownController(markdownController)

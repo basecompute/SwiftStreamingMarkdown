@@ -17,7 +17,6 @@ private struct CachedParagraphNSViewSize {
 
 class ParagraphNSView: NSTextView {
   private static let jsonEncoder = JSONEncoder()
-  static let animationDuration: CFTimeInterval = ParagraphAnimationConstants.fadeInDuration
 
   private(set) var paragraphContents: NSMutableAttributedString = NSMutableAttributedString()
   private(set) var lineSpacing: CGFloat?
@@ -114,7 +113,13 @@ class ParagraphNSView: NSTextView {
 
   // MARK: - Content Update
 
-  func setParagraphContents(_ newContents: NSMutableAttributedString, lineSpacing: CGFloat? = nil, animatedByWord: Bool) {
+  func setParagraphContents(
+    _ newContents: NSMutableAttributedString,
+    lineSpacing: CGFloat? = nil,
+    animatedByWord: Bool,
+    animationDuration: TimeInterval = ParagraphAnimationConstants.fadeInDuration,
+    animationStaggerDuration: TimeInterval = ParagraphAnimationConstants.staggerDuration
+  ) {
     AppAppearance.update(appearance: effectiveAppearance)
 
     guard paragraphContents != newContents || self.lineSpacing != lineSpacing else {
@@ -145,12 +150,12 @@ class ParagraphNSView: NSTextView {
       let newContentRange = NSRange(location: oldLength, length: newContentLength)
       let wordRanges = finalString.splitIntoWords(withIn: newContentRange)
       let wordCount = wordRanges.count
-      let delayBetweenWords: Double = ParagraphAnimationConstants.delayBetweenWordsRatio / Double(max(wordCount, 1))
+      let delayBetweenWords = animationStaggerDuration / Double(max(wordCount, 1))
       let baseStartTime = CACurrentMediaTime()
       for (index, wordRange) in wordRanges.enumerated() {
         let animationData = FadeAnimationData(
           startTime: baseStartTime + Double(index) * delayBetweenWords,
-          duration: Self.animationDuration,
+          duration: animationDuration,
           range: wordRange
         )
         activeAnimations.append(animationData)

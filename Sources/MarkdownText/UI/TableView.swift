@@ -27,7 +27,7 @@ struct TableView: View {
   let columnMaxWidths: [Int: CGFloat]
 
   private let defaultMaxColumnWidth: CGFloat = 200
-  @State private var scrollWidth: CGFloat = 0
+  @State private var viewportWidth: CGFloat = 0
   @State private var isExpanded: Bool = false
   @State private var isCopyPressed: Bool = false
   @State private var isCopyScaled: Bool = false
@@ -121,7 +121,11 @@ struct TableView: View {
   @ViewBuilder
   var gridView: some View {
     VStack(alignment: .leading, spacing: 0) {
-      TableLayout(columnCount: headings.count, columnMaxWidths: self.actualColumnMaxWidths()) {
+      TableLayout(
+        columnCount: headings.count,
+        columnMaxWidths: self.actualColumnMaxWidths(),
+        minimumWidth: viewportWidth
+      ) {
         ForEach(0..<headings.count, id: \.self) { colIdx in
           headerView(colIdx: colIdx)
         }
@@ -136,7 +140,7 @@ struct TableView: View {
   }
 
   private func actualColumnMaxWidths() -> [CGFloat] {
-    let averageWidth = scrollWidth / CGFloat(headings.count)
+    let averageWidth = viewportWidth / CGFloat(headings.count)
     var actualColumnMaxWidths = Array(repeating: CGFloat(0), count: headings.count)
     for idx in 0..<headings.count {
       let maxColumnWidth = columnMaxWidths[idx] ?? defaultMaxColumnWidth
@@ -214,18 +218,15 @@ struct TableView: View {
             .stroke(config.tableStyle.borderColor, lineWidth: 1)
         )
         .cornerRadius(12)
-        .onWidthChange { newWidth in
-          scrollWidth = newWidth
-        }
     }
     .background {
       GeometryReader { geo in
         Color.clear
           .onAppear {
-            scrollWidth = geo.size.width
+            viewportWidth = geo.size.width
           }
           .onChange(of: geo.size.width) { newValue in
-            scrollWidth = newValue
+            viewportWidth = newValue
           }
       }
     }
@@ -320,6 +321,7 @@ struct TableLayout: Layout {
 
   let columnCount: Int
   let columnMaxWidths: [CGFloat]
+  let minimumWidth: CGFloat
 
   private let defaultRowHeight: CGFloat = 44
 
@@ -335,6 +337,11 @@ struct TableLayout: Layout {
         columnWidths[col] = min(max(columnWidths[col], size.width), columnMaxWidths[col])
       }
     }
+    columnWidths = Self.expandedColumnWidths(
+      columnWidths,
+      maximumWidths: columnMaxWidths,
+      minimumTotalWidth: minimumWidth
+    )
 
     var rowHeights = Array(repeating: CGFloat(0), count: rowCount)
     for row in 0..<rowCount {
@@ -349,6 +356,33 @@ struct TableLayout: Layout {
     }
 
     return CacheData(columnWidths: columnWidths, rowHeights: rowHeights)
+  }
+
+  static func expandedColumnWidths(
+    _ widths: [CGFloat],
+    maximumWidths: [CGFloat],
+    minimumTotalWidth: CGFloat
+  ) -> [CGFloat] {
+    guard widths.count == maximumWidths.count else { return widths }
+
+    var result = widths
+    var remaining = max(0, minimumTotalWidth - result.reduce(0, +))
+    var expandable = result.indices.filter { result[$0] < maximumWidths[$0] }
+
+    while remaining > 0, !expandable.isEmpty {
+      let share = remaining / CGFloat(expandable.count)
+      var consumed: CGFloat = 0
+      for index in expandable {
+        let growth = min(share, maximumWidths[index] - result[index])
+        result[index] += growth
+        consumed += growth
+      }
+      guard consumed > 0 else { break }
+      remaining -= consumed
+      expandable = expandable.filter { result[$0] < maximumWidths[$0] }
+    }
+
+    return result
   }
 
   func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout CacheData) -> CGSize {

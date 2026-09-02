@@ -331,6 +331,18 @@ class ParagraphUIView: UITextView {
     fadeAnimationDisplayLink = nil
   }
 
+  /// Immediately presents the paragraph's final appearance and stops any
+  /// outstanding word fades. Used when streaming advances to a newer block.
+  func finishTextAnimations() {
+    layer.removeAllAnimations()
+    alpha = 1
+    tearDownDisplayLink()
+    guard !activeAnimations.isEmpty else { return }
+    activeAnimations.removeAll()
+    attributedText = lineSpacing.map { applyLineSpacing(to: paragraphContents, lineSpacing: $0) }
+      ?? paragraphContents
+  }
+
   private func invalidateCachedSize() {
     cachedSize = nil
   }

@@ -65,6 +65,10 @@ extension EnvironmentValues {
   /// The shared controller used by descendant Markdown views to route
   /// table/context-menu events to the configured `MarkdownListener`.
   @Entry public var markdownController: MarkdownController?
+  /// Whether this block is the live edge of a streamed document. Earlier
+  /// blocks finish any outstanding text reveal as soon as a newer block
+  /// arrives, keeping animation focused in one place.
+  @Entry var isActiveStreamingMarkdownBlock = true
 }
 
 #if DEBUG

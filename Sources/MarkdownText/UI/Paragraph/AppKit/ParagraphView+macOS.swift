@@ -10,6 +10,7 @@ struct ParagraphView: NSViewRepresentable {
   @Environment(\.openURL) var openURL
   @Environment(\.markdownConfig) var config: MarkdownRenderConfig
   @Environment(\.markdownController) var markdownController: MarkdownController?
+  @Environment(\.isActiveStreamingMarkdownBlock) var isActiveStreamingBlock
 
   var contents: NSMutableAttributedString
   var lineSpacing: CGFloat?
@@ -30,7 +31,7 @@ struct ParagraphView: NSViewRepresentable {
     view.setTextContextMenu(config.resolvedTextContextMenu)
     view.setMarkdownController(markdownController)
 
-    if config.shouldAnimateText {
+    if config.shouldAnimateText && isActiveStreamingBlock {
       view.alphaValue = 0
       NSAnimationContext.runAnimationGroup { ctx in
         ctx.duration = config.textAnimationDuration
@@ -43,7 +44,7 @@ struct ParagraphView: NSViewRepresentable {
 
   func updateNSView(_ view: ParagraphNSView, context: Context) {
     if view.paragraphContents != contents || view.lineSpacing != lineSpacing {
-      let shouldAnimate = view.window != nil && config.shouldAnimateText
+      let shouldAnimate = view.window != nil && config.shouldAnimateText && isActiveStreamingBlock
       view.setParagraphContents(
         contents,
         lineSpacing: lineSpacing,
@@ -51,6 +52,9 @@ struct ParagraphView: NSViewRepresentable {
         animationDuration: config.textAnimationDuration,
         animationStaggerDuration: config.textAnimationStaggerDuration
       )
+    }
+    if !isActiveStreamingBlock || !config.shouldAnimateText {
+      view.finishTextAnimations()
     }
     view.setTextContextMenu(config.resolvedTextContextMenu)
     view.setMarkdownController(markdownController)

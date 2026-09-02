@@ -9,6 +9,7 @@ import SwiftUI
 struct BlockView: View {
 
   @Environment(\.markdownConfig) var config: MarkdownRenderConfig
+  @Environment(\.isActiveStreamingMarkdownBlock) var isParentActive
 
   let renderables: [MarkdownRenderable]
 
@@ -20,6 +21,10 @@ struct BlockView: View {
     VStack(alignment: .leading, spacing: config.blockSpacing) {
       ForEach(renderables) { renderable in
         SingleBlockView(renderable: renderable)
+          .environment(
+            \.isActiveStreamingMarkdownBlock,
+            isParentActive && renderable.id == renderables.last?.id
+          )
       }
     }
   }

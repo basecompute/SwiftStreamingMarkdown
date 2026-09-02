@@ -41,5 +41,32 @@ struct ParagraphNSViewTests {
 
     #expect(view.measureSize(fittingWidth: 400) == .zero)
   }
+
+  @Test("Finishing text animation restores the final paragraph appearance")
+  func finishesTextAnimation() {
+    let view = ParagraphNSView()
+    let attributes: [NSAttributedString.Key: Any] = [.foregroundColor: NSColor.labelColor]
+    view.setParagraphContents(
+      NSMutableAttributedString(string: "Before ", attributes: attributes),
+      animatedByWord: false
+    )
+    view.setParagraphContents(
+      NSMutableAttributedString(string: "Before after", attributes: attributes),
+      animatedByWord: true,
+      animationDuration: 10,
+      animationStaggerDuration: 1
+    )
+    view.alphaValue = 0.5
+
+    view.finishTextAnimations()
+
+    let color = view.textStorage?.attribute(
+      .foregroundColor,
+      at: view.string.count - 1,
+      effectiveRange: nil
+    ) as? NSColor
+    #expect(view.alphaValue == 1)
+    #expect(color?.alphaComponent == 1)
+  }
 }
 #endif

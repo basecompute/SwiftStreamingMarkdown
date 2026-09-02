@@ -19,6 +19,7 @@ enum RowContent: Equatable {
 struct TableView: View {
   @Environment(\.markdownConfig) var config: MarkdownRenderConfig
   @Environment(\.markdownController) var controller: MarkdownController?
+  @Environment(\.isActiveStreamingMarkdownBlock) var isActiveStreamingBlock
 
   let headings: [AttributedString]
   let headingContents: [RowContent]
@@ -100,6 +101,9 @@ struct TableView: View {
         .lineLimit(nil)
         .multilineTextAlignment(textAlignment(forColumn: colIdx))
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: frameAlignment(forColumn: colIdx))
+        .if(config.shouldAnimateText && isActiveStreamingBlock) { view in
+          view.fadeInTextTransition(attributedString: attributedString)
+        }
         .accessibilityValue(String.itemPositionInTable(rowIndex: 1, totalRow: numOfRows + 1, columnIndex: colIdx + 1, totalColumn: headings.count))
     }
   }
@@ -169,6 +173,9 @@ struct TableView: View {
           .lineLimit(nil)
           .multilineTextAlignment(textAlignment(forColumn: colIdx))
           .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: frameAlignment(forColumn: colIdx))
+          .if(config.shouldAnimateText && isActiveStreamingBlock) { view in
+            view.fadeInTextTransition(attributedString: attributedString)
+          }
           .accessibilityValue(String.itemPositionInTable(rowIndex: rowIdx + 2, totalRow: numOfRows + 1, columnIndex: colIdx + 1, totalColumn: headings.count))
         Spacer()
       }
@@ -296,6 +303,14 @@ extension View {
       edges.append(.trailing)
     }
     return border(width: 1, edges: edges, color: color)
+  }
+
+  @ViewBuilder
+  func fadeInTextTransition(attributedString: AttributedString) -> some View {
+    self.fadeInTextTransition(config: .variableDuration(
+      glyphCount: attributedString.characters.count,
+      glyphDelay: 0.02,
+      glyphDuration: 0.2))
   }
 
 }

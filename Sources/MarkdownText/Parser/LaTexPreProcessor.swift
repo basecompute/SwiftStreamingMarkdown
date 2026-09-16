@@ -263,8 +263,10 @@ extension String {
     "violet": "#8E4EC6",
   ]
 
-  /// `\textcolor{name|#hex}{content}` -> `{\color{#hex}content}` for
-  /// non-nested content; `\color{name}` -> `\color{#hex}`.
+  /// `\textcolor{name|#hex}{content}` -> `\color{#hex}{content}` (the
+  /// typesetter's two-argument form, so scripts on the content stay
+  /// colored); `\color{name}` -> `\color{#hex}`, which the typesetter
+  /// treats as LaTeX's switch for the rest of the group.
   func mappingTextColors() -> String {
     var result = self
     if let regex = try? NSRegularExpression(
@@ -281,7 +283,7 @@ extension String {
         guard let hex else { continue }
         let content = String(result[contentRange])
         result = result.replacingCharacters(
-          in: whole, with: "{\\color{\(hex)}\(content)}")
+          in: whole, with: "\\color{\(hex)}{\(content)}")
       }
     }
     if let colorRegex = try? NSRegularExpression(

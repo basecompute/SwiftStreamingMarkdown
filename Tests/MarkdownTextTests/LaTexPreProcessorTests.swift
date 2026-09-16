@@ -276,6 +276,12 @@ final class LaTexPreProcessorTests: XCTestCase {
     XCTAssertEqual(expected, processed)
   }
 
+  func testTextColorKeepsScriptsInsideTheColoredGroup() {
+    XCTAssertEqual(preprocessor.process(input: "$\\textcolor{red}{e^{i\\pi}} + 1$"),
+                   "`\\(\\color{#E5484D}{e^{i\\pi}} + 1\\)`")
+    XCTAssertEqual(preprocessor.process(input: "$\\color{blue} x + y$"), "`\\(\\color{#3E63DD} x + y\\)`")
+  }
+
   func testBoxedReachesTheTypesetter() {
     XCTAssertEqual(preprocessor.process(input: "$\\boxed{x = 1}$"), "`\\(\\boxed{x = 1}\\)`")
   }

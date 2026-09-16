@@ -60,10 +60,7 @@ struct SingleBlockView: View {
             BlockMathView(latex: latexString, color: config.paragraphStyle.textColor)
               .padding(.vertical, 6)
               .frame(maxWidth: .infinity, alignment: .center)
-            ScrollView(.horizontal) {
-              BlockMathView(latex: latexString, color: config.paragraphStyle.textColor)
-                .padding(.vertical, 6)
-            }.scrollIndicators(.hidden)
+            OverflowingBlockMathView(latex: latexString, color: config.paragraphStyle.textColor)
           }
         } else {
           // The typesetter covers a LaTeX subset; commands outside it

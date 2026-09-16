@@ -224,7 +224,10 @@ extension String {
       .replacingOccurrences(of: "\\end{align}", with: "\\end{aligned}")
       // \phantom reserves its argument's width; a quad is the closest
       // supported stand-in.
-      .replacingOccurrences(of: "\\phantom\\{[^{}]*\\}", with: "\\quad ",
+      // The backslash must be escaped for the regex engine: `\p` alone
+      // starts a Unicode property class, which made this pattern invalid
+      // and the rewrite a silent no-op.
+      .replacingOccurrences(of: "\\\\phantom\\{[^{}]*\\}", with: "\\\\quad ",
                             options: .regularExpression)
       .replacingOccurrences(of: "\\operatorname*", with: "\\mathrm")
       .replacingOccurrences(of: "\\operatorname", with: "\\mathrm")

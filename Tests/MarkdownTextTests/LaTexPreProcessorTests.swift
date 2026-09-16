@@ -276,6 +276,10 @@ final class LaTexPreProcessorTests: XCTestCase {
     XCTAssertEqual(expected, processed)
   }
 
+  func testPhantomBecomesAQuad() {
+    XCTAssertEqual(preprocessor.process(input: "$a \\phantom{xxx} b$"), "`\\(a \\quad  b\\)`")
+  }
+
   /// Regression guard for the rewrites removed in favour of native
   /// typesetting: the source must reach the typesetter byte-for-byte.
   func testTypesetterNativeSyntaxesPassThrough() throws {

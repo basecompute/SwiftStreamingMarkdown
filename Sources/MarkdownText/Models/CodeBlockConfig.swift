@@ -106,6 +106,26 @@ public struct CodeBlockConfig: Hashable, Sendable {
     )
   }
 
+  /// The pre-border initializer, kept so the upstream signature stays
+  /// source-compatible (`CodeBlockConfigTests` references it as a
+  /// function value, which default arguments alone do not satisfy).
+  /// - Parameters:
+  ///   - theme: See `theme`. Defaults to `Theme.default`.
+  ///   - backgroundColor: See `backgroundColor`. Defaults to `nil` (unset).
+  ///   - foregroundColor: See `foregroundColor`. Defaults to `nil` (`Stone350`).
+  public init(
+    theme: Theme = .default,
+    backgroundColor: Color? = nil,
+    foregroundColor: Color? = nil
+  ) {
+    self.init(
+      theme: theme,
+      backgroundColor: backgroundColor,
+      borderColor: nil,
+      foregroundColor: foregroundColor
+    )
+  }
+
   /// Create a code-block configuration with optional font overrides.
   /// - Parameters:
   ///   - theme: See `theme`. Defaults to `Theme.default`.

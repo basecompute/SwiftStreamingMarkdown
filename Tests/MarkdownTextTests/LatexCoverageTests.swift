@@ -21,6 +21,14 @@ final class LatexCoverageTests: XCTestCase {
       "p \\implies q",
       "A + B \\rightleftharpoons C",
       "\\varphi(x) = f(x) - \\big(f(a) + f'(a)(x-a)\\big)",
+      "\\boxed{x = 1}",
+      "a \\equiv b \\pmod{n} \\quad d \\bmod 9",
+      "A \\xrightarrow[g]{f} B",
+      "\\cancel{x} + \\bcancel{y}",
+      "a \\not\\in B",
+      "x ≤ y − 1, θ = 90°",
+      "\\text{A, \\Gamma} + \\text{\\Large big}",
+      "\\begin{array}{c|r} a & b \\\\ \\hline c & d \\end{array}",
     ]
     for source in sources {
       XCTAssertNil(LatexCoverage.rejectedForm(of: source), source)

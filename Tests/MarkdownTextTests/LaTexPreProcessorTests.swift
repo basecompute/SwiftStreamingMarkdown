@@ -276,6 +276,32 @@ final class LaTexPreProcessorTests: XCTestCase {
     XCTAssertEqual(expected, processed)
   }
 
+  func testBoxedReachesTheTypesetter() {
+    XCTAssertEqual(preprocessor.process(input: "$\\boxed{x = 1}$"), "`\\(\\boxed{x = 1}\\)`")
+  }
+
+  func testDollarsInsideBlockMathStay() {
+    let text = """
+    Inline $a$ before.
+
+    $$
+    \\text{price is $x$} + \\$5
+    $$
+
+    Inline $b$ after.
+    """
+    let expected = """
+    Inline `\\(a\\)` before.
+
+    ```blockmath
+    \\text{price is $x$} + \\$5
+    ```
+
+    Inline `\\(b\\)` after.
+    """
+    XCTAssertEqual(preprocessor.process(input: text), expected)
+  }
+
   func testPhantomBecomesAQuad() {
     XCTAssertEqual(preprocessor.process(input: "$a \\phantom{xxx} b$"), "`\\(a \\quad  b\\)`")
   }

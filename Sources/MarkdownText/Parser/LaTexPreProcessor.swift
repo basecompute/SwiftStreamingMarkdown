@@ -78,12 +78,6 @@ final class LaTexPreProcessorImpl: LaTexPreProcessor {
     }
   }
 
-  static let boxedLatex = Regex {
-    Capture {
-      "\\boxed"
-    }
-  }
-
   static let bracketSize = Regex {
     Capture {
       ChoiceOf {
@@ -140,22 +134,44 @@ final class LaTexPreProcessorImpl: LaTexPreProcessor {
     return result
   }
 
-  /// This wraps inline math as inline code to avoid over-unescaping issue
+  /// This wraps inline math as inline code to avoid over-unescaping issue.
+  /// Block math has already become a fenced code block, and a `$` inside
+  /// it (`\text{$x$}`, `\$5`) must stay a `$`, so the inline rules only
+  /// see the text between fences.
   func processInlineMath(input: String, rules: Set<MarkdownParseOption.LatexMatching>) -> String {
-    var result = input
-    if rules.contains(.inlineSlashBracket) {
-      result = result.replacing(Self.inlineParenthesisMath, with: { match in
-        let latex = String(match[Self.latexRef]).filteringUnsupportedSyntaxes()
-        return "`\\(\(latex)\\)`"
-      })
+    return Self.mappingOutsideFences(input) { segment in
+      var result = segment
+      if rules.contains(.inlineSlashBracket) {
+        result = result.replacing(Self.inlineParenthesisMath, with: { match in
+          let latex = String(match[Self.latexRef]).filteringUnsupportedSyntaxes()
+          return "`\\(\(latex)\\)`"
+        })
+      }
+      if rules.contains(.inlineDollar) {
+        result = result.replacing(Self.inlineDollarMath, with: { match in
+          let latex = String(match[Self.latexRef]).filteringUnsupportedSyntaxes()
+          return "`\\(\(latex)\\)`"
+        })
+      }
+      return result
     }
-    if rules.contains(.inlineDollar) {
-      result = result.replacing(Self.inlineDollarMath, with: { match in
-        let latex = String(match[Self.latexRef]).filteringUnsupportedSyntaxes()
-        return "`\\(\(latex)\\)`"
-      })
+  }
+
+  /// Applies `transform` to the text outside ``` fences; fenced content
+  /// (block math, code) passes through untouched.
+  private static func mappingOutsideFences(_ input: String, _ transform: (String) -> String) -> String {
+    var output = ""
+    var remaining = Substring(input)
+    var insideFence = false
+    while let fence = remaining.range(of: "```") {
+      let segment = String(remaining[..<fence.lowerBound])
+      output += insideFence ? segment : transform(segment)
+      output += "```"
+      remaining = remaining[fence.upperBound...]
+      insideFence.toggle()
     }
-    return result
+    output += insideFence ? String(remaining) : transform(String(remaining))
+    return output
   }
 
   // MARK: - Convenience overloads (default to every supported rule)
@@ -177,20 +193,19 @@ final class LaTexPreProcessorImpl: LaTexPreProcessor {
 
 extension String {
 
-  /// Primes, \dfrac/\tfrac, \overrightarrow, \implies and
-  /// \rightleftharpoons typeset natively in the bundled typesetter fork,
-  /// so they pass through untouched: rewriting them degraded the output
-  /// (text-style fractions, a plain arrow accent, the wrong equilibrium
-  /// symbol) and the prime rewrite corrupted identifiers — `B'C` became
-  /// the unknown command `\primeC`, and `\text{Newton's}` failed to parse.
+  /// Primes, \dfrac/\tfrac, \overrightarrow, \implies,
+  /// \rightleftharpoons and \boxed typeset natively in the bundled
+  /// typesetter fork, so they pass through untouched: rewriting them
+  /// degraded the output (text-style fractions, a plain arrow accent, the
+  /// wrong equilibrium symbol, an unboxed answer) and the prime rewrite
+  /// corrupted identifiers — `B'C` became the unknown command `\primeC`,
+  /// and `\text{Newton's}` failed to parse.
   func filteringUnsupportedSyntaxes() -> String {
     return self
       .rewritingCommonAliases()
-      .strippingBoxedLatex()
       .replacingDots()
   }
 
-  /// This strips "\boxed" string from a given latex. This is because our rendering engine does not support \boxed{...} yet.
   /// Common commands outside the typesetter's subset with faithful
   /// stand-ins — each rewrite keeps a formula renderable that would
   /// otherwise fall back to raw source.
@@ -282,10 +297,6 @@ extension String {
       }
     }
     return result
-  }
-
-  func strippingBoxedLatex() -> String {
-    return self.replacing(LaTexPreProcessorImpl.boxedLatex, with: "")
   }
 
   /// Replacing `dots` which is unsupported into `ldots`

@@ -171,7 +171,7 @@ final class LaTexPreProcessorTests: XCTestCase {
     ```
 
     ```blockmath
-    f^\\prime(x) = \\lim_{h \\to 0} \\frac{f(x+h) - f(x)}{h}
+    f'(x) = \\lim_{h \\to 0} \\frac{f(x+h) - f(x)}{h}
     ```
 
     ```blockmath
@@ -258,22 +258,42 @@ final class LaTexPreProcessorTests: XCTestCase {
     let processed = preprocessor.process(input: text)
     let expected = """
     ```blockmath
-    \\varphi(x) = f(x) - (f(a) + f^\\prime(a)(x-a)).
+    \\varphi(x) = f(x) - \\big(f(a) + f'(a)(x-a)\\big).
     ```
 
-    - Vector `\\(\\vec{FA} = (a+c,0)\\)`
+    - Vector `\\(\\overrightarrow{FA} = (a+c,0)\\)`
 
     ```blockmath
-    2+2(2q-1) = 2q^2 \\Rightarrow 2+4q-2 = 2q^2 \\Rightarrow 4q = 2q^2 \\Rightarrow q^2 - 2q = 0.
+    2+2(2q-1) = 2q^2 \\implies 2+4q-2 = 2q^2 \\implies 4q = 2q^2 \\implies q^2 - 2q = 0.
     ```
 
     ```blockmath
-    Fe^{3+}_{(aq)} + xCl^-_{(aq)} \\Leftrightarrow [FeCl_x]^{3-x}_{(aq)} \\quad (x = 1,2,3,4)
+    Fe^{3+}_{(aq)} + xCl^-_{(aq)} \\rightleftharpoons [FeCl_x]^{3-x}_{(aq)} \\quad (x = 1,2,3,4)
     ```
 
     `\\(a_1, \\ldots, a_n\\)`
     """
     XCTAssertEqual(expected, processed)
+  }
+
+  /// Regression guard for the rewrites removed in favour of native
+  /// typesetting: the source must reach the typesetter byte-for-byte.
+  func testTypesetterNativeSyntaxesPassThrough() throws {
+    let text = """
+    Angle $\\angle CB'B = 90$ and $f''(x) + f'(x)$ with $\\text{Newton's law}$.
+
+    $$
+    \\dfrac{\\partial f}{\\partial x} + \\tfrac{1}{2} \\implies \\overrightarrow{AB} \\rightleftharpoons \\vec{v}
+    $$
+    """
+    let expected = """
+    Angle `\\(\\angle CB'B = 90\\)` and `\\(f''(x) + f'(x)\\)` with `\\(\\text{Newton's law}\\)`.
+
+    ```blockmath
+    \\dfrac{\\partial f}{\\partial x} + \\tfrac{1}{2} \\implies \\overrightarrow{AB} \\rightleftharpoons \\vec{v}
+    ```
+    """
+    XCTAssertEqual(expected, preprocessor.process(input: text))
   }
 
   // MARK: - Matching-rule gating

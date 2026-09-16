@@ -84,18 +84,6 @@ final class LaTexPreProcessorImpl: LaTexPreProcessor {
     }
   }
 
-  static let dfracLatex = Regex {
-    Capture {
-      "\\dfrac"
-    }
-  }
-
-  static let tfracLatex = Regex {
-    Capture {
-      "\\tfrac"
-    }
-  }
-
   static let bracketSize = Regex {
     Capture {
       ChoiceOf {
@@ -109,30 +97,6 @@ final class LaTexPreProcessorImpl: LaTexPreProcessor {
         "\\Biggr"
         "\\big"
       }
-    }
-  }
-
-  static let primeLatex = Regex {
-    Capture {
-      "'"
-    }
-  }
-
-  static let vectorLatex = Regex {
-    Capture {
-      "\\overrightarrow"
-    }
-  }
-
-  static let rightArrowLatex = Regex {
-    Capture {
-      "\\implies"
-    }
-  }
-
-  static let harpoonsLatex = Regex {
-    Capture {
-      "\\rightleftharpoons"
     }
   }
 
@@ -213,15 +177,16 @@ final class LaTexPreProcessorImpl: LaTexPreProcessor {
 
 extension String {
 
+  /// Primes, \dfrac/\tfrac, \overrightarrow, \implies and
+  /// \rightleftharpoons typeset natively in the bundled typesetter fork,
+  /// so they pass through untouched: rewriting them degraded the output
+  /// (text-style fractions, a plain arrow accent, the wrong equilibrium
+  /// symbol) and the prime rewrite corrupted identifiers — `B'C` became
+  /// the unknown command `\primeC`, and `\text{Newton's}` failed to parse.
   func filteringUnsupportedSyntaxes() -> String {
     return self
       .rewritingCommonAliases()
       .strippingBoxedLatex()
-      .replacingfrac()
-      .replacingPrime()
-      .replacingVector()
-      .replacingImplies()
-      .replacingHarpoons()
       .replacingDots()
   }
 
@@ -318,33 +283,6 @@ extension String {
 
   func strippingBoxedLatex() -> String {
     return self.replacing(LaTexPreProcessorImpl.boxedLatex, with: "")
-  }
-
-  /// Replacing `dfrac` and `tfac` which is unsupported into simple `frac`
-  func replacingfrac() -> String {
-    return self
-      .replacing(LaTexPreProcessorImpl.dfracLatex, with: "\\frac")
-      .replacing(LaTexPreProcessorImpl.tfracLatex, with: "\\frac")
-  }
-
-  /// Replacing `'` which is unsupported into `^prime`
-  func replacingPrime() -> String {
-    return self.replacing(LaTexPreProcessorImpl.primeLatex, with: "^\\prime")
-  }
-
-  /// Replacing `overrightarrow` which is unsupported into `vec`
-  func replacingVector() -> String {
-    return self.replacing(LaTexPreProcessorImpl.vectorLatex, with: "\\vec")
-  }
-
-  /// Replacing `implies` which is unsupported into `Rightarrow`
-  func replacingImplies() -> String {
-    return self.replacing(LaTexPreProcessorImpl.rightArrowLatex, with: "\\Rightarrow")
-  }
-
-  /// Replacing `harpoons` which is unsupported into `Leftrightarrow`
-  func replacingHarpoons() -> String {
-    return self.replacing(LaTexPreProcessorImpl.harpoonsLatex, with: "\\Leftrightarrow")
   }
 
   /// Replacing `dots` which is unsupported into `ldots`

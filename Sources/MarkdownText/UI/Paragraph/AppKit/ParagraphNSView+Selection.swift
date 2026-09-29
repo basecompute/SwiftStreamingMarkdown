@@ -72,12 +72,22 @@ extension ParagraphNSView {
     }
   }
 
+  override var writablePasteboardTypes: [NSPasteboard.PasteboardType] {
+    [.html] + super.writablePasteboardTypes.filter { $0 != .html }
+  }
+
+  var clipboardContent: MarkdownClipboardContent? {
+    if let selection = selectionCoordinator, selection.selectedText != nil { return selection.clipboardContent }
+    guard let textStorage, selectedRange().length > 0 else { return nil }
+    let range = NSIntersectionRange(selectedRange(), NSRange(location: 0, length: textStorage.length))
+    let text = InlineCodeStyle.unpadded(textStorage.attributedSubstring(from: range))
+    return MarkdownClipboardContent(records: [.init(text: text, path: clipboardPath)], plainText: text.string)
+  }
+
   // swiftlint:disable:next no_any
   override func copy(_ sender: Any?) {
-    guard selectionCoordinator?.selectedText != nil else { super.copy(sender); return }
-    NSPasteboard.general.clearContents()
-    _ = writeSelection(to: .general, type: .string)
-    _ = writeSelection(to: .general, type: .rtf)
+    guard let content = clipboardContent else { super.copy(sender); return }
+    content.write()
   }
 
   // swiftlint:disable:next no_any

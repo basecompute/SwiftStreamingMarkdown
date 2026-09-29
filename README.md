@@ -355,3 +355,34 @@ The scope includes only mounted, visible Markdown text; hidden disclosures, imag
 standalone rendered equations, and surrounding SwiftUI controls are not text participants.
 Keyboard range extension remains native to the focused text view. On iOS the group is
 transparent and existing selection behavior is unchanged.
+
+### Copying formatted Markdown on macOS
+
+Copying selected Markdown now supplies HTML, RTF, and plain text. HTML uses real tables,
+headings, and nested lists; RTF uses native text-table and text-list attributes. Inline
+code exports a monospace font and standard background shading. Partial table selections
+retain the table shape with empty unselected cells, without copying their contents.
+
+To copy a complete response, including blocks that are not currently mounted:
+
+```swift
+let document = await MarkdownParserImpl().parse(text: response, config: config)
+await MainActor.run {
+  MarkdownClipboardContent(document: document, config: config).write()
+}
+```
+
+Pass `plainText: response` to the initializer to keep the original Markdown as the
+plain-text fallback while supplying rendered HTML and RTF to rich-text editors.
+
+The exporter uses a white-page palette and portable equivalents for Apple system fonts,
+so dark-mode responses remain readable in document editors. It generates both rich formats
+directly, without loading HTML in WebKit or fetching linked resources. Source text is escaped
+and only ordinary web, mail, and telephone links are exported as hyperlinks.
+
+Receiving applications choose which clipboard format to accept. Google Docs preserves the
+exported tables, nested lists, text emphasis, and inline-code shading in paste testing, but
+simplifies code-block backgrounds, border treatments, and spacing. Exact padding, rounded
+corners, and font metrics remain application-dependent. Standalone equations export as source
+text and block images as alternative text when copying a full document; this is not a visual
+snapshot or an editable equation exporter. iOS clipboard behavior is unchanged.

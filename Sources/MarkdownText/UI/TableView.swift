@@ -130,6 +130,7 @@ struct TableView: View {
   private func headerView(colIdx: Int) -> some View {
     HStack(spacing: 0) {
       headerContent(colIdx: colIdx)
+        .clipboardTableCell(row: 0, column: colIdx, alignment: alignment(forColumn: colIdx))
         .environment(\.markdownSelectionSeparator, colIdx == 0 ? "\n\n" : "\t")
       Spacer()
     }
@@ -178,6 +179,7 @@ struct TableView: View {
     case .containsAttachment(let nsAttributedString):
       HStack(spacing: 0) {
         ParagraphView(contents: applyTypographyThemingAndGetContent(nsAttributedString, column: colIdx))
+          .clipboardTableCell(row: rowIdx + 1, column: colIdx, alignment: alignment(forColumn: colIdx))
           .environment(\.markdownSelectionSeparator, colIdx == 0 ? "\n" : "\t")
           .environment(\.isActiveStreamingMarkdownBlock, shouldAnimateRow(rowIdx))
           .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: frameAlignment(forColumn: colIdx))

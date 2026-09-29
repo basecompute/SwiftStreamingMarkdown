@@ -25,6 +25,7 @@ class ParagraphNSView: NSTextView {
     }
   }
   var nativeSelectionAttributes: [NSAttributedString.Key: Any]?
+  var clipboardPath: [MarkdownClipboardBlock] = []
   var selectionSeparator = "\n\n"
   var selectionMouseDown: NSEvent?
   var selectionDidDrag = false
@@ -366,6 +367,9 @@ class ParagraphNSView: NSTextView {
   // Remove only our marked layout spacers, never whitespace from the source.
   // This hook covers Copy, drag-and-drop and Services exports.
   override func writeSelection(to pboard: NSPasteboard, type: NSPasteboard.PasteboardType) -> Bool {
+    if type == .html || type == .rtf || type == .string, let content = clipboardContent {
+      return content.write(to: pboard, type: type)
+    }
     guard let textStorage else { return false }
     let selected = NSMutableAttributedString()
     if let shared = selectionCoordinator?.selectedText {

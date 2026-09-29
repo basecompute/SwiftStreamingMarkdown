@@ -29,8 +29,10 @@ struct UnorderedListView: View {
           }
           Spacer()
         }
+        .clipboardListItem(idx, checkbox: items[idx].checkbox)
         if items[idx].children.count > 1 {
           BlockView(renderables: Array(items[idx].children.dropFirst()))
+            .clipboardListItem(idx, checkbox: items[idx].checkbox)
             .padding([.leading], 0)
         }
       }

@@ -98,5 +98,6 @@ struct SingleBlockView: View {
           .id(id)
       }
     }
+    .clipboardBlock(renderable)
   }
 }

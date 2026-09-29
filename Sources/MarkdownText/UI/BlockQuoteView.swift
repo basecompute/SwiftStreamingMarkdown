@@ -51,6 +51,9 @@ private struct InternalBlockQuoteView: View {
         case .nested(let subItems):
           ForEach(subItems.indices, id: \.self) { index in
             InternalBlockQuoteView(item: subItems[index])
+              .transformEnvironment(\.markdownClipboardPath) { path in
+                path.append(MarkdownClipboardBlock(tag: subItems[index].isNested ? "blockquote" : "p", id: "quote-\(index)"))
+              }
               .fixedSize(horizontal: false, vertical: true)
           }
           .fixedSize(horizontal: false, vertical: true)

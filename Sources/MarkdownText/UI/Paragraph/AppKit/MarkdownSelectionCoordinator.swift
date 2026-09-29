@@ -198,6 +198,17 @@ final class MarkdownSelectionCoordinator: ObservableObject {
     }
   }
 
+  var clipboardContent: MarkdownClipboardContent? {
+    guard let range, let plainText = selectedText?.string else { return nil }
+    let records = segments.compactMap { segment -> MarkdownClipboardContent.Record? in
+      let selected = NSIntersectionRange(range, NSRange(location: segment.start, length: segment.text.length))
+      guard selected.length > 0 else { return nil }
+      let text = segment.text.attributedSubstring(from: NSRange(location: selected.location - segment.start, length: selected.length))
+      return .init(text: text, path: segment.view.clipboardPath)
+    }
+    return MarkdownClipboardContent(records: records, plainText: plainText)
+  }
+
   var selectedText: NSAttributedString? {
     guard let range, range.length > 0 else { return nil }
     let result = NSMutableAttributedString()

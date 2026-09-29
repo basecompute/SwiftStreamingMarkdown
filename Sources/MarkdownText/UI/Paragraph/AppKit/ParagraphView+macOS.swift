@@ -15,6 +15,8 @@ struct ParagraphView: NSViewRepresentable {
   @Environment(\.markdownSelection) private var selection
   @Environment(\.markdownSelectionSeparator) private var selectionSeparator
 
+  @Environment(\.markdownClipboardPath) private var clipboardPath
+
   var contents: NSMutableAttributedString
   var lineSpacing: CGFloat?
 
@@ -31,6 +33,7 @@ struct ParagraphView: NSViewRepresentable {
     let view = ParagraphNSView()
     view.selectionCoordinator = selection
     view.selectionSeparator = selectionSeparator
+    view.clipboardPath = clipboardPath
     view.inlineCodeFont = config.inlineStyle.codeTextFont
     view.onUrlTap = openUrlFunction
     view.setParagraphContents(contents, lineSpacing: lineSpacing, animatedByWord: false)
@@ -51,6 +54,7 @@ struct ParagraphView: NSViewRepresentable {
   func updateNSView(_ view: ParagraphNSView, context: Context) {
     view.selectionCoordinator = selection
     view.selectionSeparator = selectionSeparator
+    view.clipboardPath = clipboardPath
     if view.inlineCodeFont != config.inlineStyle.codeTextFont {
       view.inlineCodeFont = config.inlineStyle.codeTextFont
       context.coordinator.sizeCache.removeAll()

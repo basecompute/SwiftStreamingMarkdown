@@ -33,6 +33,22 @@ struct CodeBlockView: View {
     }
   }
 
+  #if canImport(AppKit)
+  private var nativeCode: NSMutableAttributedString {
+    let text = NSMutableAttributedString(attributedString: NSAttributedString(attributedString ?? AttributedString(code)))
+    let fonts = config.codeBlockConfig.codeTextFonts
+    let range = NSRange(location: 0, length: text.length)
+    text.addAttribute(.font, value: fonts.normal, range: range)
+    if let spacing = fonts.preferredLetterSpacing { text.addAttribute(.kern, value: spacing, range: range) }
+    if let height = fonts.preferredLineHeight {
+      let paragraph = NSMutableParagraphStyle()
+      paragraph.minimumLineHeight = height
+      text.addAttribute(.paragraphStyle, value: paragraph, range: range)
+    }
+    return text
+  }
+  #endif
+
   private var backgroundColor: Color? {
     config.codeBlockConfig.backgroundColor
   }
@@ -45,6 +61,10 @@ struct CodeBlockView: View {
   var codeblock: some View {
     ScrollView(.horizontal) {
       HStack(alignment: .top) {
+        #if canImport(AppKit)
+        ParagraphView(contents: nativeCode)
+          .fixedSize(horizontal: true, vertical: true)
+        #else
         if #available(iOS 16.1, *) {  // Minimum version for HighlightSwift
           Text(attributedString ?? AttributedString(code))
             .font(config.codeBlockConfig.codeTextFonts)
@@ -56,6 +76,7 @@ struct CodeBlockView: View {
             .foregroundStyle(Color.Theme.Component.CodeBlock.Foreground.FunctionParameter)
             .transition(.opacity)
         }
+        #endif
       }
 
     }.transaction { transaction in

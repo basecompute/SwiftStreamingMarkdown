@@ -63,11 +63,7 @@ struct TableView: View {
     let full = NSRange(location: 0, length: content.length)
     if content.containsAttachments(in: full) { return true }
     #if canImport(AppKit)
-    var hasCode = false
-    content.enumerateAttribute(.inlineCodeFill, in: full) { value, _, stop in
-      if value != nil { hasCode = true; stop.pointee = true }
-    }
-    return hasCode
+    return true
     #else
     return false
     #endif
@@ -114,7 +110,7 @@ struct TableView: View {
     case .containsAttachment(let nsAttributedString):
       // Header cells previously flattened to Text, which cannot host
       // attachments — inline math in a header silently vanished.
-      ParagraphView(contents: applyTypographyThemingAndGetContent(nsAttributedString))
+      ParagraphView(contents: applyTypographyThemingAndGetContent(nsAttributedString, column: colIdx))
         .environment(\.isActiveStreamingMarkdownBlock, shouldAnimateHeader)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: frameAlignment(forColumn: colIdx))
         .accessibilityValue(String.itemPositionInTable(rowIndex: 1, totalRow: numOfRows + 1, columnIndex: colIdx + 1, totalColumn: headings.count))
@@ -134,6 +130,7 @@ struct TableView: View {
   private func headerView(colIdx: Int) -> some View {
     HStack(spacing: 0) {
       headerContent(colIdx: colIdx)
+        .environment(\.markdownSelectionSeparator, colIdx == 0 ? "\n\n" : "\t")
       Spacer()
     }
     .padding(12)
@@ -180,7 +177,8 @@ struct TableView: View {
     switch content {
     case .containsAttachment(let nsAttributedString):
       HStack(spacing: 0) {
-        ParagraphView(contents: applyTypographyThemingAndGetContent(nsAttributedString))
+        ParagraphView(contents: applyTypographyThemingAndGetContent(nsAttributedString, column: colIdx))
+          .environment(\.markdownSelectionSeparator, colIdx == 0 ? "\n" : "\t")
           .environment(\.isActiveStreamingMarkdownBlock, shouldAnimateRow(rowIdx))
           .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: frameAlignment(forColumn: colIdx))
           .accessibilityValue(String.itemPositionInTable(rowIndex: rowIdx + 2, totalRow: numOfRows + 1, columnIndex: colIdx + 1, totalColumn: headings.count))
@@ -442,10 +440,19 @@ struct TableLayout: Layout {
 // MARK: - Helper Functions
 extension TableView {
   /// Apply typography theming and return themed content for use with ParagraphView
-  private func applyTypographyThemingAndGetContent(_ attributedString: NSAttributedString) -> NSMutableAttributedString {
+  private func applyTypographyThemingAndGetContent(_ attributedString: NSAttributedString, column: Int) -> NSMutableAttributedString {
     // Apply typography theming for table cells
     let mutableAttributedString = NSMutableAttributedString(attributedString: attributedString)
     let fullRange = NSRange(location: 0, length: mutableAttributedString.length)
+    #if canImport(AppKit)
+    let paragraph = NSMutableParagraphStyle()
+    switch alignment(forColumn: column) {
+    case .leading: paragraph.alignment = .left
+    case .center: paragraph.alignment = .center
+    case .trailing: paragraph.alignment = .right
+    }
+    mutableAttributedString.addAttribute(.paragraphStyle, value: paragraph, range: fullRange)
+    #endif
     let themeColor = MDColor(config.tableStyle.regularTextColor)
 
     // Apply theme color to text that doesn't already have a foreground color

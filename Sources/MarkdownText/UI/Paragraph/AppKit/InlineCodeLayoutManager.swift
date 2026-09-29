@@ -7,6 +7,8 @@
 import AppKit
 
 final class InlineCodeLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
+  var sharedSelection = NSRange(location: 0, length: 0)
+
   struct Background {
     let rect: NSRect
     let fill: NSColor
@@ -103,6 +105,17 @@ final class InlineCodeLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
     }
     // Native selection is painted over the fill, so selected code stays legible.
     super.drawBackground(forGlyphRange: visible, at: origin)
+    // Draw the same highlight in every participating paragraph. Only one can
+    // be first responder; native inactive-selection colors would otherwise differ.
+    if sharedSelection.length > 0, let container = textContainers.first {
+      let safeRange = NSIntersectionRange(sharedSelection, NSRange(location: 0, length: textStorage?.length ?? 0))
+      let selected = glyphRange(forCharacterRange: safeRange, actualCharacterRange: nil)
+      NSColor.selectedTextBackgroundColor.withAlphaComponent(0.65).setFill()
+      enumerateEnclosingRects(forGlyphRange: NSIntersectionRange(selected, visible),
+                              withinSelectedGlyphRange: selected, in: container) { rect, _ in
+        rect.offsetBy(dx: origin.x, dy: origin.y).fill()
+      }
+    }
   }
 }
 #endif

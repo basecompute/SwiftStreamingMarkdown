@@ -14,6 +14,10 @@ import SwiftUI
 @Equatable
 public struct DocumentView: View {
   @StateObject var controller: MarkdownController
+  #if canImport(AppKit)
+  @Environment(\.markdownSelection) private var inheritedSelection
+  @StateObject private var selection = MarkdownSelectionCoordinator()
+  #endif
 
   let renderableDocument: RenderableDocument
   let config: MarkdownRenderConfig
@@ -35,6 +39,9 @@ public struct DocumentView: View {
 
   public var body: some View {
     BlockView(renderables: renderableDocument.renderables)
+    #if canImport(AppKit)
+    .environment(\.markdownSelection, inheritedSelection ?? selection)
+    #endif
     .environment(\.markdownConfig, config)
     .environment(\.markdownController, controller)
     .task {

@@ -12,6 +12,9 @@ struct ParagraphView: NSViewRepresentable {
   @Environment(\.markdownController) var markdownController: MarkdownController?
   @Environment(\.isActiveStreamingMarkdownBlock) var isActiveStreamingBlock
 
+  @Environment(\.markdownSelection) private var selection
+  @Environment(\.markdownSelectionSeparator) private var selectionSeparator
+
   var contents: NSMutableAttributedString
   var lineSpacing: CGFloat?
 
@@ -26,6 +29,8 @@ struct ParagraphView: NSViewRepresentable {
     // previously displayed document, which then render at the wrong positions. Each
     // paragraph gets its own view instead.
     let view = ParagraphNSView()
+    view.selectionCoordinator = selection
+    view.selectionSeparator = selectionSeparator
     view.inlineCodeFont = config.inlineStyle.codeTextFont
     view.onUrlTap = openUrlFunction
     view.setParagraphContents(contents, lineSpacing: lineSpacing, animatedByWord: false)
@@ -44,6 +49,8 @@ struct ParagraphView: NSViewRepresentable {
   }
 
   func updateNSView(_ view: ParagraphNSView, context: Context) {
+    view.selectionCoordinator = selection
+    view.selectionSeparator = selectionSeparator
     if view.inlineCodeFont != config.inlineStyle.codeTextFont {
       view.inlineCodeFont = config.inlineStyle.codeTextFont
       context.coordinator.sizeCache.removeAll()
@@ -65,10 +72,13 @@ struct ParagraphView: NSViewRepresentable {
     view.setMarkdownController(markdownController)
   }
 
+  static func dismantleNSView(_ view: ParagraphNSView, coordinator: Coordinator) {
+    view.selectionCoordinator?.unregister(view)
+  }
+
   func sizeThatFits(_ proposal: ProposedViewSize, nsView: ParagraphNSView, context: Context) -> CGSize? {
-    guard let width = proposal.width, width > 0, width.isFinite else {
-      return nil
-    }
+    let width = proposal.width ?? 100_000
+    guard width > 0, width.isFinite else { return nil }
 
     if contents != context.coordinator.lastContents || lineSpacing != context.coordinator.lastLineSpacing {
       context.coordinator.sizeCache.removeAll()

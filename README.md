@@ -331,3 +331,27 @@ Please follow the responsible-disclosure process described in
 SwiftStreamingMarkdown is released under the [MIT License](LICENSE). Dependencies
 are declared in [`Package.swift`](Package.swift); each upstream ships its own
 license terms via Swift Package Manager.
+
+### Selecting text on macOS
+
+Mouse-drag selection spans paragraphs, headings, list text, block quotes, fenced code,
+and table cells within a document. Copy exports the selected text in reading order,
+with paragraph breaks and tab-separated table columns; inline-code layout padding and
+code-block controls are excluded. Shift-click extends the selection, and dragging past
+an enclosing scroll view scrolls its content. Double-click word selection remains native.
+
+Wrap several Markdown views belonging to one response in `MarkdownSelectionGroup`:
+
+```swift
+MarkdownSelectionGroup {
+  DocumentView(renderableDocument: firstBlock)
+  DocumentView(renderableDocument: secondBlock)
+}
+```
+
+Keep this group outside a live/finished conditional to retain source selection offsets
+when its views are replaced. Appending streamed text preserves the existing selection.
+The scope includes only mounted, visible Markdown text; hidden disclosures, images,
+standalone rendered equations, and surrounding SwiftUI controls are not text participants.
+Keyboard range extension remains native to the focused text view. On iOS the group is
+transparent and existing selection behavior is unchanged.

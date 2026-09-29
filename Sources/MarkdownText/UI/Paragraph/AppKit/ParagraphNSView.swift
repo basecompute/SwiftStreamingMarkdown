@@ -16,6 +16,19 @@ private struct CachedParagraphNSViewSize {
 }
 
 class ParagraphNSView: NSTextView {
+  weak var selectionCoordinator: MarkdownSelectionCoordinator? {
+    didSet {
+      if oldValue !== selectionCoordinator {
+        oldValue?.unregister(self)
+        selectionCoordinator?.register(self)
+      }
+    }
+  }
+  var nativeSelectionAttributes: [NSAttributedString.Key: Any]?
+  var selectionSeparator = "\n\n"
+  var selectionMouseDown: NSEvent?
+  var selectionDidDrag = false
+
   private static let jsonEncoder = JSONEncoder()
 
   private(set) var paragraphContents: NSMutableAttributedString = NSMutableAttributedString()
@@ -119,6 +132,7 @@ class ParagraphNSView: NSTextView {
       invalidateCachedSize()
     }
     invalidateIntrinsicContentSize()
+    selectionCoordinator?.apply()
   }
 
   // MARK: - Content Update
@@ -354,9 +368,13 @@ class ParagraphNSView: NSTextView {
   override func writeSelection(to pboard: NSPasteboard, type: NSPasteboard.PasteboardType) -> Bool {
     guard let textStorage else { return false }
     let selected = NSMutableAttributedString()
-    for value in selectedRanges {
-      let range = NSIntersectionRange(value.rangeValue, NSRange(location: 0, length: textStorage.length))
-      selected.append(InlineCodeStyle.unpadded(textStorage.attributedSubstring(from: range)))
+    if let shared = selectionCoordinator?.selectedText {
+      selected.append(shared)
+    } else {
+      for value in selectedRanges {
+        let range = NSIntersectionRange(value.rangeValue, NSRange(location: 0, length: textStorage.length))
+        selected.append(InlineCodeStyle.unpadded(textStorage.attributedSubstring(from: range)))
+      }
     }
     if type == .string { return pboard.setString(selected.string, forType: type) }
     if type == .rtf || type == .rtfd {
@@ -388,7 +406,8 @@ class ParagraphNSView: NSTextView {
 
     let selectedRange = self.selectedRange()
     let clampedRange = NSIntersectionRange(selectedRange, NSRange(location: 0, length: textStorage.length))
-    let selectedText = InlineCodeStyle.unpadded(textStorage.attributedSubstring(from: clampedRange)).string
+    let selectedText = selectionCoordinator?.selectedText?.string
+      ?? InlineCodeStyle.unpadded(textStorage.attributedSubstring(from: clampedRange)).string
 
     // Start from the native context menu so system items (Copy, Look Up,
     // Translate, Share, Services, …) are preserved, then inject the configured

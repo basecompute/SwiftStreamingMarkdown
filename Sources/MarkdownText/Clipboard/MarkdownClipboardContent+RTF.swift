@@ -76,7 +76,10 @@ extension MarkdownClipboardContent {
         paragraph.headIndent += CGFloat(listStack.count) * 20
         paragraph.firstLineHeadIndent = paragraph.headIndent - 15
         paragraph.tabStops = [NSTextTab(textAlignment: .left, location: paragraph.headIndent)]
-        if let marker { text.insert(NSAttributedString(string: "\t\(marker)\t"), at: 0) }
+        if let marker {
+          let font = text.length > 0 ? text.attribute(.font, at: 0, effectiveRange: nil) as? NSFont : nil
+          text.insert(NSAttributedString(string: "\t\(marker)\t", attributes: [.font: font ?? NSFont.systemFont(ofSize: 13)]), at: 0)
+        }
       }
       if table != nil || !listStack.isEmpty {
         if !text.string.hasSuffix("\n") { text.append(NSAttributedString(string: "\n")) }

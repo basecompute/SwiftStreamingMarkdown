@@ -48,6 +48,9 @@ final class MarkdownClipboardTests: XCTestCase {
       XCTAssertTrue(content.html.contains(tag), "Missing \(tag)")
     }
     XCTAssertTrue(content.html.contains("text-align:right"))
+    XCTAssertTrue(content.html.contains("font-family:'Arial'"))
+    XCTAssertTrue(content.html.contains("font-weight:normal;font-style:normal;text-decoration:none;background-color:#ffffff;"))
+    XCTAssertTrue(content.html.contains("<ol start=\"1\" style=\"font-size:17.0pt;"))
     XCTAssertTrue(content.html.contains("☑"))
     XCTAssertTrue(content.html.contains("https://example.com"))
     let rich = try richText(content)
@@ -132,7 +135,7 @@ final class MarkdownClipboardTests: XCTestCase {
       .init(tag: "ol", id: "list"), .init(tag: "li", id: "item-2", index: 3), .init(tag: "p", id: "paragraph")
     ])
     let content = MarkdownClipboardContent(records: [record], plainText: "third")
-    XCTAssertTrue(content.html.contains("<ol start=\"3\">"))
+    XCTAssertTrue(content.html.contains("<ol start=\"3\""))
     let rich = try richText(content)
     XCTAssertTrue(String(data: try XCTUnwrap(content.rtf), encoding: .ascii)?.contains("\\levelstartat3") == true)
     let style = try XCTUnwrap(rich.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle)

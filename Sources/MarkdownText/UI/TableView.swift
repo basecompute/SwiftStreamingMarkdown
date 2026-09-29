@@ -39,7 +39,7 @@ struct TableView: View {
     self.alignments = alignments
     self.headings = headings.map { AttributedString($0) }
     self.headingContents = headings.map { content in
-      if content.containsAttachments(in: NSRange(location: 0, length: content.length)) {
+      if Self.needsParagraphView(content) {
         return .containsAttachment(string: content)
       } else {
         return .text(string: AttributedString(content))
@@ -47,7 +47,7 @@ struct TableView: View {
     }
     self.rows = rows.map { row in
       row.map { content in
-        if content.containsAttachments(in: NSRange(location: 0, length: content.length)) {
+        if Self.needsParagraphView(content) {
           return .containsAttachment(string: content)
         } else {
           return .text(string: AttributedString(content))
@@ -57,6 +57,20 @@ struct TableView: View {
 
     self.columnMaxWidths = columnMaxWidths
     self.rawMarkdown = rawMarkdown
+  }
+
+  private static func needsParagraphView(_ content: NSAttributedString) -> Bool {
+    let full = NSRange(location: 0, length: content.length)
+    if content.containsAttachments(in: full) { return true }
+    #if canImport(AppKit)
+    var hasCode = false
+    content.enumerateAttribute(.inlineCodeFill, in: full) { value, _, stop in
+      if value != nil { hasCode = true; stop.pointee = true }
+    }
+    return hasCode
+    #else
+    return false
+    #endif
   }
 
   private var numOfRows: Int {

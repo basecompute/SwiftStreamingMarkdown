@@ -26,6 +26,7 @@ struct ParagraphView: NSViewRepresentable {
     // previously displayed document, which then render at the wrong positions. Each
     // paragraph gets its own view instead.
     let view = ParagraphNSView()
+    view.inlineCodeFont = config.inlineStyle.codeTextFont
     view.onUrlTap = openUrlFunction
     view.setParagraphContents(contents, lineSpacing: lineSpacing, animatedByWord: false)
     view.setTextContextMenu(config.resolvedTextContextMenu)
@@ -43,6 +44,10 @@ struct ParagraphView: NSViewRepresentable {
   }
 
   func updateNSView(_ view: ParagraphNSView, context: Context) {
+    if view.inlineCodeFont != config.inlineStyle.codeTextFont {
+      view.inlineCodeFont = config.inlineStyle.codeTextFont
+      context.coordinator.sizeCache.removeAll()
+    }
     if view.paragraphContents != contents || view.lineSpacing != lineSpacing {
       let shouldAnimate = view.window != nil && config.shouldAnimateText && isActiveStreamingBlock
       view.setParagraphContents(

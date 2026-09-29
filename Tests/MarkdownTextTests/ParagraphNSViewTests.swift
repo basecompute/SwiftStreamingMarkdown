@@ -45,7 +45,8 @@ struct ParagraphNSViewTests {
   @Test("Finishing text animation restores the final paragraph appearance")
   func finishesTextAnimation() {
     let view = ParagraphNSView()
-    let attributes: [NSAttributedString.Key: Any] = [.foregroundColor: NSColor.labelColor]
+    // Use an opaque fixture: labelColor can be translucent on newer macOS.
+    let attributes: [NSAttributedString.Key: Any] = [.foregroundColor: NSColor.black]
     view.setParagraphContents(
       NSMutableAttributedString(string: "Before ", attributes: attributes),
       animatedByWord: false

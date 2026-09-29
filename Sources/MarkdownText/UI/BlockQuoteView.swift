@@ -38,6 +38,16 @@ private struct InternalBlockQuoteView: View {
             Spacer()
           }
           .fixedSize(horizontal: false, vertical: true)
+        #if canImport(AppKit)
+        case .attributedText(let content, _):
+          HStack {
+            ParagraphView(contents: NSMutableAttributedString(attributedString: content))
+              .padding(.vertical, 3.0)
+              .fixedSize(horizontal: false, vertical: true)
+            Spacer()
+          }
+          .fixedSize(horizontal: false, vertical: true)
+        #endif
         case .nested(let subItems):
           ForEach(subItems.indices, id: \.self) { index in
             InternalBlockQuoteView(item: subItems[index])
@@ -76,12 +86,19 @@ struct QuoteDivider: View {
 
 indirect enum BlockQuoteType: Equatable, Hashable {
   case text(String)
+  #if canImport(AppKit)
+  case attributedText(NSAttributedString, plainText: String)
+  #endif
   case nested([BlockQuoteType])
 
   var isNested: Bool {
     switch self {
     case .text:
       false
+    #if canImport(AppKit)
+    case .attributedText:
+      false
+    #endif
     case .nested:
       true
     }

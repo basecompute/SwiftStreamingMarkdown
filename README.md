@@ -259,6 +259,12 @@ let config = MarkdownRenderConfig.default
 For finer control, construct `MarkdownRenderConfig` directly to override the
 inline, paragraph, heading, list, table, and citation styles in one place.
 
+On macOS, inline code uses `inlineStyle.codeTextFont` and
+`codeBackgroundColor` with 0.4em horizontal and 0.2em vertical padding. Its
+rounded background follows the code font and text baseline, independently of
+paragraph spacing. This applies to wrapped code, quotes, and table cells;
+copying and text export preserve the original content.
+
 ## Listening for events
 
 Conform to `MarkdownListener` to receive notifications whenever the renderer

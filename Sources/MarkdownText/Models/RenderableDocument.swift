@@ -120,6 +120,10 @@ private extension BlockQuoteType {
     switch self {
     case .text(let text):
       return text
+    #if canImport(AppKit)
+    case .attributedText(_, let plainText):
+      return plainText
+    #endif
     case .nested(let items):
       return items.map { $0.plainText }.joined(separator: "\n")
     }

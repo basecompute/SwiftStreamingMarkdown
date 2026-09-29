@@ -256,5 +256,23 @@ final class MarkdownSelectionTests: XCTestCase {
     XCTAssertNotEqual(scroll.contentView.bounds.origin.y, before)
   }
 
+  func testCommandArrowReplacesSharedRangeWithNativeSelection() throws {
+    let window = window()
+    let selection = MarkdownSelectionCoordinator()
+    let first = paragraph("First paragraph", y: 400, window: window, selection: selection)
+    _ = paragraph("Second paragraph", y: 300, window: window, selection: selection)
+    window.makeFirstResponder(first)
+    select(NSRange(location: 6, length: 0), in: first, selection: selection)
+    selection.extend(to: 23)
+    let event = try XCTUnwrap(NSEvent.keyEvent(with: .keyDown, location: .zero,
+      modifierFlags: .command, timestamp: 0, windowNumber: window.windowNumber, context: nil,
+      characters: "\u{f703}", charactersIgnoringModifiers: "\u{f703}", isARepeat: false, keyCode: 124))
+    first.keyDown(with: event)
+    XCTAssertEqual(selection.range?.length, first.selectedRange().length)
+    XCTAssertNil(selection.selectedText)
+    selection.apply()
+    XCTAssertEqual(first.selectedRange().length, 0)
+  }
+
 }
 #endif

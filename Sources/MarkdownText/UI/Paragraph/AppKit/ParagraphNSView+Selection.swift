@@ -92,13 +92,18 @@ extension ParagraphNSView {
   }
 
   override func keyDown(with event: NSEvent) {
-    // Command shortcuts reach copy/selectAll through the normal responder chain.
-    if !event.modifierFlags.contains(.command) {
-      let native = selectedRange()
-      selectionCoordinator?.clear()
-      setSelectedRange(native)
+    // Copy and Select All keep their shared range. Navigation continues using
+    // AppKit's word/line movement, then updates the shared selection anchor.
+    let shortcut = event.charactersIgnoringModifiers?.lowercased() ?? ""
+    if event.modifierFlags.contains(.command), shortcut == "c" || shortcut == "a" {
+      super.keyDown(with: event)
+      return
     }
+    let native = selectedRange()
+    selectionCoordinator?.clear()
+    setSelectedRange(native)
     super.keyDown(with: event)
+    selectionCoordinator?.adoptNativeSelection(in: self)
   }
 }
 #endif

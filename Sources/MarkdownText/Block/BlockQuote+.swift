@@ -8,16 +8,27 @@ import Markdown
 import SwiftUI
 
 extension BlockQuote: BlockConvertible {
-  var quoteTypes: BlockQuoteType {
+  var quoteTypes: BlockQuoteType { quoteTypes(config: .default) }
+
+  func quoteTypes(config: MarkdownRenderConfig) -> BlockQuoteType {
     var finalQuoteTypes = [BlockQuoteType]()
 
     for child in children {
       if let inlineContainer = child as? InlineContainer {
-        // Use our custom extractPlainText method instead of the built-in plainText property
-        // to properly handle attachment citations
+        #if canImport(AppKit)
+        guard let block = child as? BlockMarkup else { continue }
+        let container: NSAttributeContainer = [
+          .font: config.blockQuoteStyle.textFonts.normal,
+          .foregroundColor: MDColor(config.blockQuoteStyle.textColor)
+        ]
+        finalQuoteTypes.append(.attributedText(
+          block.buildParagraphContent(container: container, config: config),
+          plainText: inlineContainer.extractPlainText(removeHeading: false)))
+        #else
         finalQuoteTypes.append(.text(inlineContainer.extractPlainText(removeHeading: false)))
+        #endif
       } else if let blockQuoteContainer = child as? BlockQuote {
-        finalQuoteTypes.append(blockQuoteContainer.quoteTypes)
+        finalQuoteTypes.append(blockQuoteContainer.quoteTypes(config: config))
       }
     }
 
@@ -25,7 +36,7 @@ extension BlockQuote: BlockConvertible {
   }
 
   func convert(attributeContainer: NSAttributeContainer, config: MarkdownRenderConfig) -> MarkdownRenderable {
-    .blockQuote(id: id, item: .init(quoteType: quoteTypes))
+    .blockQuote(id: id, item: .init(quoteType: quoteTypes(config: config)))
   }
 }
 

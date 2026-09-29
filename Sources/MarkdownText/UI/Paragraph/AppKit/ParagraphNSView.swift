@@ -24,6 +24,16 @@ class ParagraphNSView: NSTextView {
   private var fadeAnimationDisplayLink: CADisplayLink?
   private var cachedSize: CachedParagraphNSViewSize?
 
+  // Shared by all paragraph kinds, including those without code, so prose
+  // stays aligned while wrapped code has room for its horizontal decoration.
+  var inlineCodeFont: NSFont = MarkdownRenderConfig.defaultInlineStyle.codeTextFont {
+    didSet {
+      textContainer?.lineFragmentPadding = InlineCodeMetrics(font: inlineCodeFont).horizontalPadding
+      invalidateCachedSize()
+      invalidateIntrinsicContentSize()
+    }
+  }
+
   var textContextMenu: TextContextMenu?
   var markdownController: MarkdownController?
 
@@ -31,7 +41,7 @@ class ParagraphNSView: NSTextView {
 
   convenience init() {
     let textStorage = NSTextStorage()
-    let layoutManager = NSLayoutManager()
+    let layoutManager = InlineCodeLayoutManager()
     textStorage.addLayoutManager(layoutManager)
     let textContainer = NSTextContainer(containerSize: NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude))
     textContainer.widthTracksTextView = true
@@ -91,16 +101,16 @@ class ParagraphNSView: NSTextView {
       return .zero
     }
     let measuringTextStorage = NSTextStorage(attributedString: textStorage)
-    let measuringLayoutManager = NSLayoutManager()
+    let measuringLayoutManager = InlineCodeLayoutManager()
     let measuringContainer = NSTextContainer(size: NSSize(width: width, height: CGFloat.greatestFiniteMagnitude))
-    measuringContainer.lineFragmentPadding = 0
+    measuringContainer.lineFragmentPadding = InlineCodeMetrics(font: inlineCodeFont).horizontalPadding
     measuringContainer.maximumNumberOfLines = 0
     measuringContainer.lineBreakMode = .byWordWrapping
     measuringLayoutManager.addTextContainer(measuringContainer)
     measuringTextStorage.addLayoutManager(measuringLayoutManager)
     measuringLayoutManager.ensureLayout(for: measuringContainer)
     let usedRect = measuringLayoutManager.usedRect(for: measuringContainer)
-    return CGSize(width: usedRect.width.rounded(.up), height: usedRect.height.rounded(.up))
+    return CGSize(width: min(width, (usedRect.maxX + InlineCodeMetrics(font: inlineCodeFont).horizontalPadding).rounded(.up)), height: usedRect.height.rounded(.up))
   }
 
   override func layout() {
@@ -138,7 +148,7 @@ class ParagraphNSView: NSTextView {
 
     tearDownDisplayLink()
     invalidateCachedSize()
-    textStorage?.setAttributedString(finalString)
+    textStorage?.setAttributedString(InlineCodeStyle.padded(finalString))
 
     configureAccessibility(for: finalString)
 
@@ -148,7 +158,7 @@ class ParagraphNSView: NSTextView {
 
     if animatedByWord, newContentLength > 0 {
       let newContentRange = NSRange(location: oldLength, length: newContentLength)
-      let wordRanges = finalString.splitIntoWords(withIn: newContentRange)
+      let wordRanges = (textStorage ?? NSTextStorage()).splitIntoWords(withIn: newContentRange)
       let wordCount = wordRanges.count
       let delayBetweenWords = animationStaggerDuration / Double(max(wordCount, 1))
       let baseStartTime = CACurrentMediaTime()
@@ -194,7 +204,8 @@ class ParagraphNSView: NSTextView {
     isEditable = false
     isSelectable = true
     drawsBackground = false
-    textContainer?.lineFragmentPadding = 0
+    textContainerInset = .zero
+    textContainer?.lineFragmentPadding = InlineCodeMetrics(font: inlineCodeFont).horizontalPadding
     textContainer?.widthTracksTextView = true
     textContainer?.heightTracksTextView = false
     textContainer?.maximumNumberOfLines = 0
@@ -323,7 +334,7 @@ class ParagraphNSView: NSTextView {
     activeAnimations.removeAll()
     let finalString = lineSpacing.map { applyLineSpacing(to: paragraphContents, lineSpacing: $0) }
       ?? paragraphContents
-    textStorage?.setAttributedString(finalString)
+    textStorage?.setAttributedString(InlineCodeStyle.padded(finalString))
   }
 
   private func invalidateCachedSize() {
@@ -336,6 +347,25 @@ class ParagraphNSView: NSTextView {
 
   func setMarkdownController(_ controller: MarkdownController?) {
     markdownController = controller
+  }
+
+  // Remove only our marked layout spacers, never whitespace from the source.
+  // This hook covers Copy, drag-and-drop and Services exports.
+  override func writeSelection(to pboard: NSPasteboard, type: NSPasteboard.PasteboardType) -> Bool {
+    guard let textStorage else { return false }
+    let selected = NSMutableAttributedString()
+    for value in selectedRanges {
+      let range = NSIntersectionRange(value.rangeValue, NSRange(location: 0, length: textStorage.length))
+      selected.append(InlineCodeStyle.unpadded(textStorage.attributedSubstring(from: range)))
+    }
+    if type == .string { return pboard.setString(selected.string, forType: type) }
+    if type == .rtf || type == .rtfd {
+      let documentType: NSAttributedString.DocumentType = type == .rtf ? .rtf : .rtfd
+      guard let data = try? selected.data(from: NSRange(location: 0, length: selected.length),
+                                         documentAttributes: [.documentType: documentType]) else { return false }
+      return pboard.setData(data, forType: type)
+    }
+    return false
   }
 
   // MARK: - Link Clicks
@@ -358,7 +388,7 @@ class ParagraphNSView: NSTextView {
 
     let selectedRange = self.selectedRange()
     let clampedRange = NSIntersectionRange(selectedRange, NSRange(location: 0, length: textStorage.length))
-    let selectedText = textStorage.attributedSubstring(from: clampedRange).string
+    let selectedText = InlineCodeStyle.unpadded(textStorage.attributedSubstring(from: clampedRange)).string
 
     // Start from the native context menu so system items (Copy, Look Up,
     // Translate, Share, Services, …) are preserved, then inject the configured

@@ -188,9 +188,13 @@ extension Markdown.InlineCode: InlineConvertible {
     var container = attributeContainer
     container[.font] = config.inlineStyle.codeTextFont
     container[.foregroundColor] = MDColor(config.inlineStyle.codeTextColor)
+    #if canImport(AppKit)
+    container[.inlineCodeFill] = MDColor(config.inlineStyle.codeBackgroundColor)
+    #else
     container[.backgroundColor] = MDColor(config.inlineStyle.codeBackgroundColor)
-    container[.underlineStyle] =  NSUnderlineStyle.patternDot.rawValue
+    container[.underlineStyle] = NSUnderlineStyle.patternDot.rawValue
     container[.underlineColor] = MDColor(config.inlineStyle.codeUnderlineColor)
+    #endif
     return NSMutableAttributedString(string: codeContent).mergingAttributes(container)
   }
 }
